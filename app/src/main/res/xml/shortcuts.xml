@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="new_search"
+        android:enabled="true"
+        android:icon="@drawable/ic_launcher_foreground"
+        android:shortcutShortLabel="@string/shortcut_new">
+        <intent
+            android:action="android.intent.action.MAIN"
+            android:targetPackage="com.subflow"
+            android:targetClass="com.subflow.ui.MainActivity">
+            <extra android:name="subflow_nav" android:value="input" />
+        </intent>
+    </shortcut>
+    <shortcut
+        android:shortcutId="favorites"
+        android:enabled="true"
+        android:icon="@drawable/ic_launcher_foreground"
+        android:shortcutShortLabel="@string/favorites">
+        <intent
+            android:action="android.intent.action.MAIN"
+            android:targetPackage="com.subflow"
+            android:targetClass="com.subflow.ui.MainActivity">
+            <extra android:name="subflow_nav" android:value="favorites" />
+        </intent>
+    </shortcut>
+    <shortcut
+        android:shortcutId="stats"
+        android:enabled="true"
+        android:icon="@drawable/ic_launcher_foreground"
+        android:shortcutShortLabel="@string/shortcut_stats">
+        <intent
+            android:action="android.intent.action.MAIN"
+            android:targetPackage="com.subflow"
+            android:targetClass="com.subflow.ui.MainActivity">
+            <extra android:name="subflow_nav" android:value="stats" />
+        </intent>
+    </shortcut>
+</shortcuts>
