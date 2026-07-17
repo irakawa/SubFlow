@@ -185,6 +185,11 @@
     <string name="widget_desc">Hızlı altyazı arama</string>
     <string name="shortcut_new">Yeni Arama</string>
     <string name="shortcut_stats">İstatistikler</string>
+    <string name="update_available">Güncelleme var</string>
+    <string name="update_body">%1$s sürümü çıktı. Şimdi güncellensin mi? Verilerin korunur.</string>
+    <string name="update_now">Güncelle</string>
+    <string name="update_later">Şimdi değil</string>
+    <string name="update_downloading">İndiriliyor…</string>
     <string name="whats_new">Yenilikler</string>
     <string name="whats_new_body">• Favoriler ve izlemeye devam\n• İstatistik ekranı\n• Ana ekran widget\'ı ve kısayollar\n• Yedekle ve geri yükle\n• Titreşim ve tema efektleri</string>
     <string name="backup">Ayarları yedekle</string>

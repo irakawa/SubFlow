@@ -25,8 +25,8 @@ android {
         applicationId = "com.subflow"
         minSdk = 30
         targetSdk = 35
-        versionCode = 66
-        versionName = "2.35.0"
+        versionCode = 67
+        versionName = "2.36.0"
         ndk {
             abiFilters += listOf("arm64-v8a", "armeabi-v7a")
         }
@@ -115,7 +115,6 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("org.jsoup:jsoup:1.17.2")
-
 
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.core:core-splashscreen:1.0.1")

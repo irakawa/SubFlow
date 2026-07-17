@@ -18,10 +18,13 @@ import com.subflow.models.SubtitleResult
 import com.subflow.models.TorrentFile
 import com.subflow.pipeline.PipelineRunner
 import com.subflow.pipeline.ReleaseParser
+import com.subflow.BuildConfig
+import com.subflow.utils.ApkInstaller
 import com.subflow.utils.ConnectivityWatcher
 import com.subflow.utils.FileUtils
 import com.subflow.utils.ImdbLookup
 import com.subflow.utils.TitleSuggestion
+import com.subflow.utils.UpdateChecker
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -102,6 +105,42 @@ class SearchViewModel(app: Application) : AndroidViewModel(app) {
     private val _suggestions = MutableStateFlow<List<TitleSuggestion>>(emptyList())
     val suggestions: StateFlow<List<TitleSuggestion>> = _suggestions.asStateFlow()
     private var suggestJob: Job? = null
+
+    // in-app update: latest github release when it's newer than this build, else null
+    private val _update = MutableStateFlow<UpdateChecker.Update?>(null)
+    val update: StateFlow<UpdateChecker.Update?> = _update.asStateFlow()
+    private val _updateDownloading = MutableStateFlow(false)
+    val updateDownloading: StateFlow<Boolean> = _updateDownloading.asStateFlow()
+    private var updateChecked = false
+
+    fun checkForUpdate() {
+        if (updateChecked) return
+        updateChecked = true
+        viewModelScope.launch {
+            _update.value = try {
+                UpdateChecker.check(BuildConfig.VERSION_NAME)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                null
+            }
+        }
+    }
+
+    fun dismissUpdate() {
+        _update.value = null
+    }
+
+    // downloads the new apk and opens the installer; android updates over the current app
+    fun installUpdate() {
+        val u = _update.value ?: return
+        if (_updateDownloading.value) return
+        _updateDownloading.value = true
+        viewModelScope.launch {
+            val ok = ApkInstaller.downloadAndInstall(getApplication(), u.apkUrl)
+            if (!ok) _updateDownloading.value = false // failed, let them retry
+        }
+    }
 
     private val _ocrBusy = MutableStateFlow(false)
     val ocrBusy: StateFlow<Boolean> = _ocrBusy.asStateFlow()

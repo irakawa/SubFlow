@@ -101,6 +101,9 @@ fun HomeScreen(
     val hasLastRelease by viewModel.hasLastRelease.collectAsState()
     val continueHint by viewModel.continueWatching.collectAsState()
     val queueSize by viewModel.queueSize.collectAsState()
+    val update by viewModel.update.collectAsState()
+    val updateDownloading by viewModel.updateDownloading.collectAsState()
+    androidx.compose.runtime.LaunchedEffect(Unit) { viewModel.checkForUpdate() }
     // show changelog once after an update
     var showWhatsNew by remember {
         mutableStateOf(BuildConfig.VERSION_CODE > AppSettings.lastSeenVersion)
@@ -294,6 +297,48 @@ fun HomeScreen(
         WhatsNewDialog {
             AppSettings.lastSeenVersion = BuildConfig.VERSION_CODE
             showWhatsNew = false
+        }
+    }
+
+    update?.let { info ->
+        UpdateDialog(
+            version = info.version,
+            downloading = updateDownloading,
+            onUpdate = { viewModel.installUpdate() },
+            onDismiss = { viewModel.dismissUpdate() }
+        )
+    }
+}
+
+/** Offers to install a newer release from GitHub. */
+@Composable
+private fun UpdateDialog(version: String, downloading: Boolean, onUpdate: () -> Unit, onDismiss: () -> Unit) {
+    // while the apk downloads the dialog can't be dismissed, so the install isn't cut off
+    Dialog(onDismissRequest = { if (!downloading) onDismiss() }) {
+        Column(
+            modifier = Modifier
+                .background(SubFlowColors.Surface, RoundedCornerShape(12.dp))
+                .border(1.dp, SubFlowColors.Border, RoundedCornerShape(12.dp))
+                .padding(24.dp)
+        ) {
+            Text(stringResource(R.string.update_available), style = MaterialTheme.typography.headlineMedium, color = SubFlowColors.Accent)
+            Spacer(Modifier.height(12.dp))
+            Text(stringResource(R.string.update_body, version), style = MaterialTheme.typography.bodyMedium, lineHeight = 22.sp)
+            Spacer(Modifier.height(20.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                if (!downloading) {
+                    TextButton(onClick = onDismiss) {
+                        Text(stringResource(R.string.update_later), color = SubFlowColors.TextSecondary)
+                    }
+                    Spacer(Modifier.width(8.dp))
+                }
+                TextButton(onClick = onUpdate, enabled = !downloading) {
+                    Text(
+                        stringResource(if (downloading) R.string.update_downloading else R.string.update_now),
+                        color = SubFlowColors.Accent
+                    )
+                }
+            }
         }
     }
 }

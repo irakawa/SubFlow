@@ -191,6 +191,11 @@
     <string name="widget_desc">Quick subtitle search</string>
     <string name="shortcut_new">New Search</string>
     <string name="shortcut_stats">Stats</string>
+    <string name="update_available">Update available</string>
+    <string name="update_body">Version %1$s is out. Update now? Your data stays.</string>
+    <string name="update_now">Update</string>
+    <string name="update_later">Not now</string>
+    <string name="update_downloading">Downloading…</string>
     <string name="whats_new">What\'s new</string>
     <string name="whats_new_body">• Favorites &amp; continue-watching\n• Your stats screen\n• Home-screen widget &amp; shortcuts\n• Backup &amp; restore\n• Haptics and theme effects</string>
     <string name="backup">Backup settings</string>
