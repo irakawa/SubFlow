@@ -1,0 +1,57 @@
+package com.subflow.pipeline
+
+/**
+ * follows a conversation line by line and decides who each line is spoken to.
+ *
+ * a honorific ("-san", "-sensei") anchors a one-to-one exchange and stays in
+ * effect for a few lines, since not every line repeats the name. an explicit
+ * "you all" phrase marks a group and likewise lingers, so a single stray
+ * honorific in the middle of a crowd scene doesn't flip us back to singular.
+ *
+ * stateful across the whole episode. feed it source (pre-translation) lines in
+ * order; the honorifics and "you all" cues live in the source, not the noisy MT
+ * output.
+ */
+class SceneParticipantTracker {
+
+    /** honorific / group cues stay in effect this many following lines. */
+    private val window = 4
+
+    private var ambientFormality: Formality? = null
+    private var sinceHonorific = Int.MAX_VALUE
+    private var sinceGroup = Int.MAX_VALUE
+
+    /** updates scene state with [sourceLine] and returns who it addresses. */
+    fun next(sourceLine: String): Addressee {
+        val group = AddresseeAnalyzer.isGroupAddress(sourceLine)
+        val honorific = AddresseeAnalyzer.formalityOf(sourceLine)
+
+        if (honorific != null) {
+            ambientFormality = honorific
+            sinceHonorific = 0
+        } else if (sinceHonorific != Int.MAX_VALUE) {
+            sinceHonorific++
+        }
+        if (group) sinceGroup = 0 else if (sinceGroup != Int.MAX_VALUE) sinceGroup++
+
+        // a group phrase in this line settles it: plural is genuinely correct.
+        if (group) {
+            return Addressee(Plurality.GROUP, honorific ?: ambientFormality ?: Formality.UNKNOWN)
+        }
+
+        // formality anchor: this line's honorific, or a recent one still in the window.
+        val formality = when {
+            honorific != null -> honorific
+            sinceHonorific <= window -> ambientFormality
+            else -> null
+        }
+
+        // single only with a live honorific anchor and no group address nearby;
+        // otherwise stay out of it so we never touch an unmarked plural scene.
+        return if (formality != null && sinceGroup > window) {
+            Addressee(Plurality.SINGLE, formality)
+        } else {
+            Addressee(Plurality.AMBIGUOUS, formality ?: Formality.UNKNOWN)
+        }
+    }
+}

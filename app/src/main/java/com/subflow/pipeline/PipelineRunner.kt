@@ -785,11 +785,20 @@ object PipelineRunner {
         }
         if (failed > 0) log(LogLevel.WARN, L10n.t(R.string.log_batches_failed, failed))
 
+        // final grammar stage: singular/plural address fix (SUBFLOW_LANGUAGE_RULES 3.2).
+        // one ordered pass so the scene tracker sees every cue exactly once. TR only.
+        val addressTracker = if (release.targetLang == "tr") SceneParticipantTracker() else null
         val translated = ArrayList<SyncEngine.SrtCue>(cues.size)
         batches.forEachIndexed { bi, batch ->
             val lines = batchResults[bi]
             batch.forEachIndexed { i, cue ->
-                translated += cue.copy(text = lines?.getOrElse(i) { cue.text } ?: cue.text)
+                var text = lines?.getOrElse(i) { cue.text } ?: cue.text
+                if (addressTracker != null) {
+                    // read the honorific/"you all" cues off the source, fix the TR line
+                    val addressee = addressTracker.next(cue.text)
+                    text = runCatching { GrammarFixer.fix(text, addressee) }.getOrDefault(text)
+                }
+                translated += cue.copy(text = text)
             }
         }
 
