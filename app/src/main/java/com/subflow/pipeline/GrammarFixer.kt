@@ -82,4 +82,59 @@ object GrammarFixer {
         } else {
             replacement
         }
+
+    // --- SUBFLOW_LANGUAGE_RULES 3.3: unnecessary "mı/mi" question particle ---
+
+    // an explicit alternative makes it a real question ("X mı yoksa Y mi") -> leave it.
+    private val alternative = Regex("""\b(or|yoksa|veya)\b""", RegexOption.IGNORE_CASE)
+
+    // a standalone question particle sitting at the very end, before punctuation only.
+    private val trailingParticle = Regex(
+        """\s+(mı|mi|mu|mü)(?=[\s?!.…]*$)""",
+        RegexOption.IGNORE_CASE
+    )
+
+    // grammatical words that, even capitalized at line start, mean the line is a real
+    // sentence and not a bare name being echoed in surprise.
+    private val sentenceWords = setOf(
+        "is", "are", "am", "was", "were", "be", "been", "being",
+        "you", "your", "you're", "youre", "this", "that", "these", "those",
+        "the", "a", "an", "who", "what", "where", "when", "why", "how", "which",
+        "do", "does", "did", "it", "he", "she", "they", "we", "i", "really",
+        "so", "and", "but", "or", "not", "no", "yes", "can", "will", "would",
+        "could", "should", "to", "of", "in", "on", "at", "my", "me", "him", "her"
+    )
+
+    // filler/interjections around a name don't disqualify a surprise beat.
+    private val interjections = setOf(
+        "oh", "ah", "eh", "uh", "um", "huh", "hey", "hmm", "wha", "er", "wait", "no", "hah"
+    )
+
+    /**
+     * drops a needless "mı/mi" when the source line is just a name (+honorific) said
+     * in surprise, not a genuine yes/no question. Anchored on a honorific in the
+     * source so ordinary questions like "Is this Akaishi-san?" keep their particle.
+     */
+    fun fixSurpriseParticle(source: String, translated: String): String {
+        if (AddresseeAnalyzer.formalityOf(source) == null) return translated // no name+honorific
+        if (alternative.containsMatchIn(source)) return translated // real "A or B?" question
+        if (!isBareNameCall(source)) return translated
+        return trailingParticle.replace(translated) { "" }
+    }
+
+    /** true when [source] is only a name/honorific plus interjections and punctuation. */
+    private fun isBareNameCall(source: String): Boolean {
+        val tokens = source.split(Regex("""[\s,.!?…"'()\[\]]+""")).filter { it.isNotBlank() }
+        val leftover = tokens.filterNot { token ->
+            val lower = token.lowercase(tr)
+            when {
+                lower in interjections -> true                          // "oh", "wait"
+                AddresseeAnalyzer.formalityOf(token) != null -> true    // "Akaishi-san"
+                lower in sentenceWords -> false                         // real sentence word
+                token.first().isUpperCase() -> true                     // a proper name
+                else -> false
+            }
+        }
+        return leftover.isEmpty()
+    }
 }

@@ -794,9 +794,13 @@ object PipelineRunner {
             batch.forEachIndexed { i, cue ->
                 var text = lines?.getOrElse(i) { cue.text } ?: cue.text
                 if (addressTracker != null) {
-                    // read the honorific/"you all" cues off the source, fix the TR line
+                    // read honorific / "you all" / stutter cues off the source, fix the TR line
                     val addressee = addressTracker.next(cue.text)
-                    text = runCatching { GrammarFixer.fix(text, addressee) }.getOrDefault(text)
+                    text = runCatching {
+                        var t = GrammarFixer.fix(text, addressee)          // 3.2 singular/plural
+                        t = GrammarFixer.fixSurpriseParticle(cue.text, t)  // 3.3 stray mı/mi
+                        StutterPreserver.apply(cue.text, t)                // 2.1 stutter
+                    }.getOrDefault(text)
                 }
                 translated += cue.copy(text = text)
             }
