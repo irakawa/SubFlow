@@ -60,6 +60,7 @@
     <string name="field_episode_end">آخر حلقة</string>
     <string name="save_downloads">⬇ إلى التنزيلات</string>
     <string name="uncensored_badge">بلا رقابة · النبرة محفوظة</string>
+    <string name="raw_mt_badge">ترجمة آلية خام</string>
     <string name="untranslated_badge">%1$d%% غير مترجم</string>
     <string name="preview">▶ معاينة</string>
     <string name="ob_skip">تخطٍ</string>
@@ -125,7 +126,9 @@
     <string name="log_vad_fail">مزامنة VAD دون عتبة الثقة — الإبقاء على النتيجة التقريبية</string>
     <string name="log_method_human">ترجمة بشرية</string>
     <string name="log_method_mt">ترجمة آلية + معالجة (%1$s←%2$s)</string>
+    <string name="log_method_mt_raw">ترجمة آلية خام (%1$s→%2$s)</string>
     <string name="log_method_whisper">Whisper + ترجمة + معالجة</string>
+    <string name="log_method_whisper_raw">Whisper + ترجمة آلية خام</string>
     <string name="log_method_embedded">مسار مضمّن</string>
     <string name="log_not_found_label">غير موجود</string>
     <string name="log_sync_warn">وسوم الإصدار غير متطابقة — خطأ تزامن تقديري ~%1$d مللي ثانية. يُرجى التحقق.</string>

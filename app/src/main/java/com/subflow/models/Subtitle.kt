@@ -44,7 +44,13 @@ data class SubtitleResult(
      * delivers a partly translated file rather than nothing; this is how the user finds
      * that out without opening it.
      */
-    val untranslatedPct: Int = 0
+    val untranslatedPct: Int = 0,
+    /**
+     * true when the file is raw provider output. Every quality layer is written for
+     * Turkish (SUBFLOW_LANGUAGE_RULES 8.1), so any other target language gets the
+     * machine translation and nothing else. The user is told rather than left to assume.
+     */
+    val rawMachineTranslation: Boolean = false
 )
 
 /** page that might host the subtitle but couldn't be auto-downloaded. offered as a manual lead. */

@@ -60,6 +60,7 @@
     <string name="field_episode_end">Посл. серия</string>
     <string name="save_downloads">⬇ В Загрузки</string>
     <string name="uncensored_badge">Без цензуры · тон сохранён</string>
+    <string name="raw_mt_badge">Необработанный машинный перевод</string>
     <string name="untranslated_badge">%1$d%% не переведено</string>
     <string name="preview">▶ Просмотр</string>
     <string name="ob_skip">Пропустить</string>
@@ -125,7 +126,9 @@
     <string name="log_vad_fail">VAD-синхронизация ниже порога — оставлен эвристический результат</string>
     <string name="log_method_human">Человеческий перевод</string>
     <string name="log_method_mt">МП + постобработка (%1$s→%2$s)</string>
+    <string name="log_method_mt_raw">Необработанный машинный перевод (%1$s→%2$s)</string>
     <string name="log_method_whisper">Whisper + перевод + постобработка</string>
+    <string name="log_method_whisper_raw">Whisper + необработанный машинный перевод</string>
     <string name="log_method_embedded">Встроенная дорожка</string>
     <string name="log_not_found_label">не найдено</string>
     <string name="log_sync_warn">Теги релиза не совпадают — оценка рассинхрона ~%1$d мс. Проверьте.</string>

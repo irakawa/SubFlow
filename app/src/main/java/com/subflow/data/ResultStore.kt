@@ -32,6 +32,7 @@ object ResultStore {
                         .put("qualityScore", r.qualityScore)
                         .put("tonePreserved", r.tonePreserved)
                         .put("untranslatedPct", r.untranslatedPct)
+                        .put("rawMachineTranslation", r.rawMachineTranslation)
                 )
             }
             File(dir(context), "$id.json").writeText(arr.toString(), Charsets.UTF_8)
@@ -58,7 +59,8 @@ object ResultStore {
                     syncWarning = if (o.isNull("syncWarning")) null else o.getString("syncWarning"),
                     qualityScore = o.optInt("qualityScore", 0),
                     tonePreserved = o.optBoolean("tonePreserved", false),
-                    untranslatedPct = o.optInt("untranslatedPct", 0)
+                    untranslatedPct = o.optInt("untranslatedPct", 0),
+                    rawMachineTranslation = o.optBoolean("rawMachineTranslation", false)
                 )
             }.ifEmpty { null }
         } catch (e: Throwable) {

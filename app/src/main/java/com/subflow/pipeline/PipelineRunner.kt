@@ -800,8 +800,17 @@ object PipelineRunner {
         log(LogLevel.OK, L10n.t(R.string.log_translate_done, cues.size))
         Log.d("SubFlow", "=== TRANSLATION DONE ===")
         val content = SyncEngine.renderSrt(translated)
-        val method = if (sub.sourceName.contains("Whisper")) L10n.t(R.string.log_method_whisper)
-        else L10n.t(R.string.log_method_mt, sub.language.uppercase(), release.targetLang.uppercase())
+        // every quality layer above is gated on "tr" (SUBFLOW_LANGUAGE_RULES 8.1), so any
+        // other target language leaves here as raw provider output. It must not be
+        // labelled "post-processor": that stage did not run for it.
+        val postProcessed = release.targetLang == "tr"
+        val fromWhisper = sub.sourceName.contains("Whisper")
+        val method = when {
+            fromWhisper && postProcessed -> L10n.t(R.string.log_method_whisper)
+            fromWhisper -> L10n.t(R.string.log_method_whisper_raw)
+            postProcessed -> L10n.t(R.string.log_method_mt, sub.language.uppercase(), release.targetLang.uppercase())
+            else -> L10n.t(R.string.log_method_mt_raw, sub.language.uppercase(), release.targetLang.uppercase())
+        }
         return SubtitleResult(
             fileName = sub.fileName,
             content = content,
@@ -811,19 +820,20 @@ object PipelineRunner {
             episodeLabel = "",
             syncWarning = null,
             // our own EN/JA to TR production is a first-class result, the source was
-            // identity-gated and translated in full. whisper transcripts carry one
-            // genuine extra uncertainty, so they sit a notch lower. cues we could not
-            // translate come straight off the top: they are the part of the file that
-            // does not do what the result claims to do.
+            // identity-gated and translated in full. whisper transcripts and raw
+            // (non-TR) provider output each carry a genuine extra uncertainty, so they
+            // sit lower. cues we could not translate come straight off the top: they are
+            // the part of the file that does not do what the result claims to do.
             qualityScore = Quality.withUntranslated(
-                if (sub.sourceName.contains("Whisper")) Quality.WHISPER else Quality.TRANSLATED,
+                Quality.forTranslation(fromWhisper, postProcessed),
                 untranslatedPct
             ),
             // only claimed when the sanitize repair measurably rewrote a line. the same
             // rail as Quality.CEILING: we don't assert what we couldn't verify, so a file
             // MT never softened simply carries no badge.
             tonePreserved = toneHardened,
-            untranslatedPct = untranslatedPct
+            untranslatedPct = untranslatedPct,
+            rawMachineTranslation = !postProcessed
         )
     }
 }

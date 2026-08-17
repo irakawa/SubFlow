@@ -60,6 +60,7 @@
     <string name="field_episode_end">Son blm.</string>
     <string name="save_downloads">⬇ İndirilenler\'e</string>
     <string name="uncensored_badge">Sansürsüz · ton korundu</string>
+    <string name="raw_mt_badge">Ham makine çevirisi</string>
     <string name="untranslated_badge">%%%1$d çevrilmedi</string>
     <string name="preview">▶ Önizle</string>
     <string name="ob_skip">Atla</string>
@@ -125,7 +126,9 @@
     <string name="log_vad_fail">VAD sync güven eşiğini geçemedi — heuristik sonuç korundu</string>
     <string name="log_method_human">İnsan çevirisi</string>
     <string name="log_method_mt">MT + Post-processor (%1$s→%2$s)</string>
+    <string name="log_method_mt_raw">Ham makine çevirisi (%1$s→%2$s)</string>
     <string name="log_method_whisper">Whisper + Çeviri + Post-processor</string>
+    <string name="log_method_whisper_raw">Whisper + ham makine çevirisi</string>
     <string name="log_method_embedded">Embedded track</string>
     <string name="log_not_found_label">bulunamadı</string>
     <string name="log_sync_warn">Release tag\'leri eşleşmiyor — tahmini sync hatası ~%1$dms. Kontrol etmeniz önerilir.</string>

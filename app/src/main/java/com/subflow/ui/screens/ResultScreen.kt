@@ -235,11 +235,14 @@ private fun ResultCard(result: SubtitleResult, viewModel: SearchViewModel) {
                         "${result.sizeBytes / 1024}KB · ${result.method}",
                     style = MaterialTheme.typography.bodySmall
                 )
-                if (result.qualityScore > 0 || result.tonePreserved || result.untranslatedPct > 0) {
+                if (result.qualityScore > 0 || result.tonePreserved ||
+                    result.untranslatedPct > 0 || result.rawMachineTranslation
+                ) {
                     Spacer(Modifier.height(6.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         if (result.qualityScore > 0) QualityBadge(result.qualityScore)
                         if (result.untranslatedPct > 0) UntranslatedBadge(result.untranslatedPct)
+                        if (result.rawMachineTranslation) RawMtBadge()
                         if (result.tonePreserved) ToneBadge()
                     }
                 }
@@ -398,6 +401,25 @@ private fun UntranslatedBadge(pct: Int) {
     ) {
         Text(
             stringResource(R.string.untranslated_badge, pct),
+            style = MaterialTheme.typography.labelSmall,
+            color = color
+        )
+    }
+}
+
+// badge: raw provider output. the quality layers are written for Turkish only, so this
+// says plainly what the file is instead of letting the score imply work that never ran.
+@Composable
+private fun RawMtBadge() {
+    val color = SubFlowColors.Accent
+    Box(
+        Modifier
+            .background(color.copy(alpha = 0.12f), RoundedCornerShape(50))
+            .border(1.dp, color.copy(alpha = 0.5f), RoundedCornerShape(50))
+            .padding(horizontal = 10.dp, vertical = 3.dp)
+    ) {
+        Text(
+            stringResource(R.string.raw_mt_badge),
             style = MaterialTheme.typography.labelSmall,
             color = color
         )

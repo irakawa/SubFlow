@@ -52,6 +52,34 @@ class QualityScoreTest {
         assertEquals(0, Quality.untranslatedPercent(0, 0))
     }
 
+    // --- raw MT: only Turkish gets the quality layers (SUBFLOW_LANGUAGE_RULES 8.1) ---
+
+    @Test
+    fun `a post-processed translation keeps the first class score`() {
+        assertEquals(Quality.TRANSLATED, Quality.forTranslation(fromWhisper = false, postProcessed = true))
+    }
+
+    @Test
+    fun `raw provider output does not score as a post-processed one`() {
+        val raw = Quality.forTranslation(fromWhisper = false, postProcessed = false)
+        assertEquals(Quality.TRANSLATED_RAW, raw)
+        assertTrue(raw < Quality.TRANSLATED)
+        // a delivered, identity-gated result, and nothing beyond that
+        assertEquals(Quality.FLOOR, raw)
+    }
+
+    @Test
+    fun `whisper keeps its own notch when post-processing ran`() {
+        assertEquals(Quality.WHISPER, Quality.forTranslation(fromWhisper = true, postProcessed = true))
+    }
+
+    @Test
+    fun `a raw whisper translation takes the lower of the two penalties`() {
+        val score = Quality.forTranslation(fromWhisper = true, postProcessed = false)
+        assertEquals(Quality.TRANSLATED_RAW, score)
+        assertTrue(score < Quality.WHISPER)
+    }
+
     @Test
     fun `sync still floors a fully delivered result as before`() {
         assertEquals(75, Quality.withSync(Quality.TRANSLATED, 0))

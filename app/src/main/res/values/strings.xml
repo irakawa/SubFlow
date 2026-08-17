@@ -66,6 +66,7 @@
     <string name="field_episode_end">Last ep.</string>
     <string name="save_downloads">⬇ To Downloads</string>
     <string name="uncensored_badge">Uncensored · tone preserved</string>
+    <string name="raw_mt_badge">Raw machine translation</string>
     <string name="untranslated_badge">%1$d%% untranslated</string>
     <string name="preview">▶ Preview</string>
     <string name="ob_skip">Skip</string>
@@ -131,7 +132,9 @@
     <string name="log_vad_fail">VAD sync below confidence threshold — keeping heuristic result</string>
     <string name="log_method_human">Human translation</string>
     <string name="log_method_mt">MT + post-processor (%1$s→%2$s)</string>
+    <string name="log_method_mt_raw">Raw machine translation (%1$s→%2$s)</string>
     <string name="log_method_whisper">Whisper + translation + post-processor</string>
+    <string name="log_method_whisper_raw">Whisper + raw machine translation</string>
     <string name="log_method_embedded">Embedded track</string>
     <string name="log_not_found_label">not found</string>
     <string name="log_sync_warn">Release tags mismatch — estimated sync error ~%1$dms. Please verify.</string>

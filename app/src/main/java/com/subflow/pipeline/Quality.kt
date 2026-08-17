@@ -17,8 +17,27 @@ internal object Quality {
     const val TORRENT = 90          // streamed from the release's own MKV, timing inherited
     const val TRANSLATED = 85       // our own EN/JA to TR production, first class
     const val WHISPER = 75          // transcription adds a real, honest extra uncertainty
+    const val TRANSLATED_RAW = 70   // raw provider output, no quality layer ran
     const val FLOOR = 70
     const val CEILING = 98
+
+    /**
+     * Base score for our own translation output, before the untranslated penalty.
+     *
+     * [postProcessed] is false for every target language other than Turkish. The
+     * dictionary, glossary, tone repair, address and stutter stages are all gated on "tr"
+     * (SUBFLOW_LANGUAGE_RULES 8.1), so a German or Russian result is raw provider output
+     * with only language-agnostic spacing cleanup on top. It caps at [TRANSLATED_RAW]
+     * rather than sharing the Turkish score, because none of the work that earns the
+     * higher number happened — and it sits exactly at [FLOOR]: delivered and
+     * identity-gated, nothing claimed beyond that.
+     *
+     * A raw Whisper translation carries both uncertainties, so it takes the lower cap.
+     */
+    fun forTranslation(fromWhisper: Boolean, postProcessed: Boolean): Int {
+        val base = if (fromWhisper) WHISPER else TRANSLATED
+        return if (postProcessed) base else minOf(base, TRANSLATED_RAW)
+    }
 
     /**
      * blends a base score with measured VAD confidence. only called when timing was measured.

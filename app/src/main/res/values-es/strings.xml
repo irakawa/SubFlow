@@ -60,6 +60,7 @@
     <string name="field_episode_end">Últ. ep.</string>
     <string name="save_downloads">⬇ A Descargas</string>
     <string name="uncensored_badge">Sin censura · tono preservado</string>
+    <string name="raw_mt_badge">Traducción automática sin procesar</string>
     <string name="untranslated_badge">%1$d%% sin traducir</string>
     <string name="preview">▶ Vista previa</string>
     <string name="ob_skip">Omitir</string>
@@ -125,7 +126,9 @@
     <string name="log_vad_fail">VAD sync bajo el umbral de confianza — se mantiene la heurística</string>
     <string name="log_method_human">Traducción humana</string>
     <string name="log_method_mt">TA + posprocesador (%1$s→%2$s)</string>
+    <string name="log_method_mt_raw">Traducción automática sin procesar (%1$s→%2$s)</string>
     <string name="log_method_whisper">Whisper + traducción + posprocesador</string>
+    <string name="log_method_whisper_raw">Whisper + traducción automática sin procesar</string>
     <string name="log_method_embedded">Pista integrada</string>
     <string name="log_not_found_label">no encontrado</string>
     <string name="log_sync_warn">Las etiquetas no coinciden — error de sync estimado ~%1$dms. Verifica.</string>
