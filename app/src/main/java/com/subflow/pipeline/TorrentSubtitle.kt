@@ -20,12 +20,17 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 
 /**
- * Pulls a subtitle out of a torrent without downloading the video.
+ * Pulls a subtitle out of a torrent without fetching the whole video.
  *
  * The video file is exposed via a tiny loopback HTTP server backed by libtorrent.
  * ffmpeg reads only the subtitle track over HTTP range requests and libtorrent
  * fetches just the pieces those ranges touch. Best-effort: any failure or the
  * timeout returns null, and everything is torn down in finally.
+ *
+ * Note what this is not: the pieces it does fetch are pieces of the video file, they
+ * land in cacheDir until the finally block removes them, and joining the swarm means
+ * libtorrent can upload the pieces it holds while the session runs. "Only part of the
+ * video" is the honest claim here, not "no video" — see the README disclaimer.
  */
 object TorrentSubtitle {
 
@@ -188,7 +193,9 @@ object TorrentSubtitle {
             val videoFile = File(dir, files.filePath(fileIndex))
             server = LoopbackFileServer(handle, ti, fileIndex, videoFile).also { it.start() }
             val url = "http://127.0.0.1:${server.port}/video"
-            onLog("torrent: streaming subtitle track via ffmpeg (video not downloaded)")
+            // shown to the user, so it says what actually happens: the pieces the subtitle
+            // track spans are fetched, not the whole file, and not nothing
+            onLog("torrent: altyazı izi akıtılıyor — yalnızca izin kapsadığı parçalar iniyor")
 
             val extracted = FFmpegTools.extractSubtitleFromHttp(url, context.cacheDir, release.targetLang) { onLog(it) }
             val content = extracted?.let { (file, _) ->
