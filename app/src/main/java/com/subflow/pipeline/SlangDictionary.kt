@@ -136,8 +136,11 @@ object SlangDictionary {
     )
 
     // soft markers. harsh source but one of these in the target means harden the line.
+    // "lanet olsun" is deliberately absent: mega_dictionary.json picks it as the rendering
+    // for "goddamn it", and rewriting it to "kahretsin" (its pick for the weaker plain
+    // "damn") downgrades the line instead of hardening it. The dictionary is the single
+    // authority for what a term renders as; this table only repairs what MT softened.
     val sanitizedMarkers: Map<String, String> = mapOf(
-        "lanet olsun" to "kahretsin",       // depends on the "damn" context
         "kahrolası" to "lanet olası",
         "aptal herif" to "göt herif",
         "kötü adam" to "şerefsiz",
