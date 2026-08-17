@@ -118,6 +118,7 @@
     <string name="log_whisper_running">Идёт транскрипция Whisper (офлайн)…</string>
     <string name="log_whisper_ok">Транскрипт готов</string>
     <string name="log_whisper_fail">Транскрипция не удалась</string>
+    <string name="log_whisper_too_long">Аудио %1$d мин, это устройство обрабатывает до %2$d мин — пропущено</string>
     <string name="log_audio_extracting">Извлечение звука из потока через ffmpeg…</string>
     <string name="log_vad_start">VAD-синхронизация: анализ звука (окна 10 мс)…</string>
     <string name="log_vad_applied">VAD-синхронизация: смещение %1$+d мс (уверенность %2$d%%)</string>

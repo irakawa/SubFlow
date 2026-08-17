@@ -118,6 +118,7 @@
     <string name="log_whisper_running">Whisper transkripsiyon çalışıyor (offline)…</string>
     <string name="log_whisper_ok">Transkript üretildi</string>
     <string name="log_whisper_fail">Transkripsiyon başarısız</string>
+    <string name="log_whisper_too_long">Ses %1$d dk, bu cihaz en fazla %2$d dk deşifre edebilir — atlandı</string>
     <string name="log_audio_extracting">ffmpeg stream\'den ses çıkarılıyor…</string>
     <string name="log_vad_start">VAD sync: ses analiz ediliyor (10ms pencereler)…</string>
     <string name="log_vad_applied">VAD sync: %1$+dms offset uygulandı (güven %%%2$d)</string>

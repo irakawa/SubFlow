@@ -118,6 +118,7 @@
     <string name="log_whisper_running">Transcripción Whisper en curso (offline)…</string>
     <string name="log_whisper_ok">Transcripción generada</string>
     <string name="log_whisper_fail">La transcripción falló</string>
+    <string name="log_whisper_too_long">El audio dura %1$d min, este dispositivo admite hasta %2$d min — omitido</string>
     <string name="log_audio_extracting">Extrayendo audio del stream con ffmpeg…</string>
     <string name="log_vad_start">VAD sync: analizando audio (ventanas de 10ms)…</string>
     <string name="log_vad_applied">VAD sync: offset de %1$+dms aplicado (confianza %2$d%%)</string>

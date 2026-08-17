@@ -124,6 +124,7 @@
     <string name="log_whisper_running">Whisper transcription running (offline)…</string>
     <string name="log_whisper_ok">Transcript produced</string>
     <string name="log_whisper_fail">Transcription failed</string>
+    <string name="log_whisper_too_long">Audio is %1$d min, this device can transcribe up to %2$d min — skipped</string>
     <string name="log_audio_extracting">Extracting audio from stream via ffmpeg…</string>
     <string name="log_vad_start">VAD sync: analyzing audio (10ms windows)…</string>
     <string name="log_vad_applied">VAD sync: applied %1$+dms offset (confidence %2$d%%)</string>
