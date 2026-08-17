@@ -28,6 +28,34 @@ class LanguageRulesTest {
         assertTrue(out.toneHardened)
     }
 
+    // --- 1: sanitize detection must not depend on a known soft marker ---
+
+    @Test
+    fun `sanitizing is detected even when no soft marker was left behind`() {
+        // MT dropped the profanity outright instead of softening it into a known
+        // marker, so the marker-based reading used to miss this entirely
+        assertTrue(SlangDictionary.looksSanitized("That fucking bastard!", "Kahrolası herif!"))
+        assertTrue(SlangDictionary.looksSanitized("Fuck you!", "Git buradan!"))
+    }
+
+    @Test
+    fun `a line that kept its register is not called sanitized`() {
+        assertTrue(!SlangDictionary.looksSanitized("You son of a bitch!", "Seni orospu çocuğu!"))
+    }
+
+    @Test
+    fun `a clean source is never called sanitized`() {
+        assertFalse(SlangDictionary.looksSanitized("Good morning.", "Günaydın."))
+    }
+
+    @Test
+    fun `the dictionary now reaches a line that carries only a soft marker`() {
+        val post = PostProcessor("tr")
+        val out = post.processBatch(listOf("That fucking bastard!"), listOf("Kahrolası herif!"))
+        assertEquals("sikik herif!", out.lines[0])
+        assertTrue(out.toneHardened)
+    }
+
     // --- 3.3: unnecessary "mı/mi" question particle ---
 
     private fun mi(source: String, translated: String) =

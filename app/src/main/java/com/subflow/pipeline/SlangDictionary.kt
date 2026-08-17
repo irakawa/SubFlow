@@ -189,12 +189,18 @@ object SlangDictionary {
         "siktir", "bok", "orospu", "piç", "kaltak", "şerefsiz", "göt", "yavşak", "sıçayım", "lan"
     )
 
-    // sanitized = harsh source, no harsh equivalent in target, and a known soft marker present
+    /**
+     * sanitized = the source swore and the target carries no harsh equivalent.
+     *
+     * Deliberately does NOT require one of [weakTargetTokens] to be present. MT does not
+     * only soften profanity into a recognizable marker, it also drops it outright
+     * ("Fuck you!" -> "Git buradan!"), and requiring a marker made every such line
+     * invisible — which kept the whole enToTr table from ever being consulted.
+     */
     fun looksSanitized(sourceLine: String, targetLine: String): Boolean {
         if (!sourceHasProfanity(sourceLine)) return false
         val lowerTarget = targetLine.lowercase()
-        return strongTargetTokens.none { lowerTarget.contains(it) } &&
-            weakTargetTokens.any { lowerTarget.contains(it) }
+        return strongTargetTokens.none { lowerTarget.contains(it) }
     }
 
     // apply the dictionary's hard equivalent to the target
