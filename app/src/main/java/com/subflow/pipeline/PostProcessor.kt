@@ -118,22 +118,35 @@ class PostProcessor(private val targetLang: String = "tr") {
         return out
     }
 
-    /** keep source proper names in the output */
+    /**
+     * keep source proper names in the output, including names first seen in an earlier
+     * cue: a character doesn't stop being a name halfway through the episode just
+     * because this line doesn't repeat it (rule 6, terminology consistency).
+     */
     private fun restoreProperNames(source: String, line: String): String {
-        val names = Regex("\\b[A-Z][a-z]{2,}\\b").findAll(source)
+        Regex("\\b[A-Z][a-z]{2,}\\b").findAll(source)
             .map { it.value }
-            .filter { it !in commonEnglishWords }
+            .filterNot { it in commonEnglishWords }
+            .forEach { properNames += it }
+
         var out = line
-        for (name in names) {
-            properNames += name
+        for (name in properNames) {
             // MT lowercased the name, restore it
             val lowered = name.lowercase()
             if (out.contains(lowered) && !out.contains(name)) {
-                out = out.replace(lowered, name)
+                out = out.replace(wholeWord(lowered), name)
             }
         }
         return out
     }
+
+    /**
+     * whole-word matcher for [word]. `\b` is ASCII-only here, so it would happily fire
+     * inside "kanıyor" (it reads "ı" as a non-word char) and rewrite an ordinary Turkish
+     * word into a name. Unicode letter lookarounds don't.
+     */
+    private fun wholeWord(word: String): Regex =
+        Regex("(?<![\\p{L}\\p{N}])${Regex.escape(word)}(?![\\p{L}\\p{N}])")
 
     private val commonEnglishWords = setOf(
         "The", "This", "That", "What", "When", "Where", "Why", "How",

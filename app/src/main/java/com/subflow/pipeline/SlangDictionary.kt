@@ -135,32 +135,6 @@ object SlangDictionary {
         "young master" to "genç efendi"
     )
 
-    // archetype voice patterns to tune tone (villain, comedic, tsundere, stoic)
-    val archetypePatterns: Map<String, List<Pair<String, String>>> = mapOf(
-        "villain" to listOf(
-            "you fool" to "seni ahmak",
-            "pathetic" to "acınasısın",
-            "kneel" to "diz çök",
-            "worthless" to "değersiz böcek"
-        ),
-        "comedic" to listOf(
-            "oops" to "eyvah",
-            "my bad" to "benim hatam ya",
-            "yikes" to "öf be",
-            "awkward" to "garip kaçtı şimdi"
-        ),
-        "tsundere" to listOf(
-            "it's not like i" to "sanki senin için yaptım da",
-            "baka" to "aptal",
-            "whatever" to "her neyse işte"
-        ),
-        "stoic" to listOf(
-            "i see" to "anlıyorum",
-            "very well" to "pekâlâ",
-            "so be it" to "öyle olsun"
-        )
-    )
-
     // soft markers. harsh source but one of these in the target means harden the line.
     val sanitizedMarkers: Map<String, String> = mapOf(
         "lanet olsun" to "kahretsin",       // depends on the "damn" context

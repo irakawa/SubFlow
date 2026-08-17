@@ -93,6 +93,27 @@ class LanguageRulesTest {
         assertEquals("Gidiyor musun?", mi("Are you leaving?", "Gidiyor musun?"))
     }
 
+    // --- 6: a name stays the same name for the whole episode ---
+
+    @Test
+    fun `a name learned in an earlier cue keeps its capital later`() {
+        val post = PostProcessor("tr")
+        post.processBatch(listOf("Akaishi is here."), listOf("Akaishi burada."))
+        // this cue never names her, so only the remembered name can restore the capital
+        val out = post.processBatch(listOf("She left with him."), listOf("Sonra akaishi gitti."))
+        assertEquals("Sonra Akaishi gitti.", out.lines[0])
+    }
+
+    @Test
+    fun `a remembered name does not bleed into a longer word`() {
+        val post = PostProcessor("tr")
+        post.processBatch(listOf("Kan is waiting."), listOf("Kan bekliyor."))
+        // "kanepe" and "kanıyor" merely start with the name. the turkish suffix matters:
+        // an ascii word boundary treats "ı" as a non-word char and would match here.
+        val out = post.processBatch(listOf("It hurts."), listOf("Sonra kanepe devrildi ve kanıyor."))
+        assertEquals("Sonra kanepe devrildi ve kanıyor.", out.lines[0])
+    }
+
     // --- 2.1: stutter preservation with the Turkish first letter ---
 
     private fun st(source: String, translated: String) =
