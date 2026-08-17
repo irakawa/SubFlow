@@ -33,7 +33,6 @@ class PostProcessor(private val targetLang: String = "tr") {
             val source = sourceLines.getOrElse(i) { "" }
             var line = translatedLines[i]
 
-            line = fixGrammar(line)
             if (targetLang == "tr") line = applyGlossary(source, line)
             line = restoreProperNames(source, line)
 
@@ -45,6 +44,11 @@ class PostProcessor(private val targetLang: String = "tr") {
                 if (restored != line) hardened = true
                 line = restored
             }
+
+            // last, so the grammar pass also tidies what the repair just wrote. running it
+            // first left every repaired cue starting in lowercase, since the replacement
+            // text lands after the capital has already been applied.
+            line = fixGrammar(line)
 
             // flag nonsense
             if (isNonsense(source, line)) {

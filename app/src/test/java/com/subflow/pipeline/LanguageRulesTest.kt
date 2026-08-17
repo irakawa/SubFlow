@@ -97,9 +97,11 @@ class LanguageRulesTest {
     @Test
     fun `the dictionary now reaches a line that carries only a soft marker`() {
         val post = PostProcessor("tr")
-        // "kahrolası" is the soft form of "lanet olası", which is what "goddamn" renders as
+        // "kahrolası" is the soft form of "lanet olası", which is what "goddamn" renders as.
+        // a repaired cue must still start with a capital: the repair runs before the
+        // grammar pass, not after it.
         val out = post.processBatch(listOf("That goddamn bastard!"), listOf("Kahrolası herif!"))
-        assertEquals("lanet olası herif!", out.lines[0])
+        assertEquals("Lanet olası herif!", out.lines[0])
         assertTrue(out.toneHardened)
     }
 
