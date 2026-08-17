@@ -60,6 +60,7 @@
     <string name="field_episode_end">آخر حلقة</string>
     <string name="save_downloads">⬇ إلى التنزيلات</string>
     <string name="uncensored_badge">بلا رقابة · النبرة محفوظة</string>
+    <string name="untranslated_badge">%1$d%% غير مترجم</string>
     <string name="preview">▶ معاينة</string>
     <string name="ob_skip">تخطٍ</string>
     <string name="ob_next">التالي</string>

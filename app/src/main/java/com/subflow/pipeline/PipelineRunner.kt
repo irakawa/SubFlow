@@ -96,31 +96,6 @@ object PipelineRunner {
 
     private const val MAX_LOG_ENTRIES = 1000
 
-    /**
-     * Delivery-confidence score (0-100), the "uyum" badge the user sees.
-     *
-     * Everything that gets a score already passed the identity and language gates,
-     * so the number is about provenance (how the sub was produced) plus a measured
-     * VAD nudge when a video stream was available. Two rails: a gated result never
-     * drops into the failure band (floor 70), and we never claim certainty we
-     * couldn't verify (ceiling 98). How it was produced is shown by the method
-     * label, not by quietly docking a correct translation.
-     */
-    private object Quality {
-        const val HUMAN_TAGS_MATCH = 92 // human target sub, release tags line up
-        const val HUMAN = 85            // human target sub, tags differ
-        const val EMBEDDED = 95         // from the video's own container, timing is native
-        const val TORRENT = 90          // streamed from the release's own MKV, timing inherited
-        const val TRANSLATED = 85       // our own EN/JA to TR production, first class
-        const val WHISPER = 75          // transcription adds a real, honest extra uncertainty
-        const val FLOOR = 70
-        const val CEILING = 98
-
-        /** blends a base score with measured VAD confidence. only called when timing was measured. */
-        fun withSync(base: Int, confPct: Int): Int =
-            (base + ((confPct - 50) / 5).coerceIn(-10, 10)).coerceIn(FLOOR, CEILING)
-    }
-
     private suspend fun log(level: LogLevel, message: String) {
         // cascade coroutines log concurrently, so append via CAS
         // cap the list so long searches don't bloat memory
@@ -795,6 +770,12 @@ object PipelineRunner {
         }
         if (failed > 0) log(LogLevel.WARN, L10n.t(R.string.log_batches_failed, failed))
 
+        // cues that stay in the source language. batches differ in size (the last one is
+        // short), so count cues, not batches — the log line above is transient, this
+        // number ships with the result.
+        val untranslatedCues = batches.filterIndexed { bi, _ -> batchResults[bi] == null }.sumOf { it.size }
+        val untranslatedPct = Quality.untranslatedPercent(untranslatedCues, cues.size)
+
         // final grammar stage: singular/plural address fix (SUBFLOW_LANGUAGE_RULES 3.2).
         // one ordered pass so the scene tracker sees every cue exactly once. TR only.
         val addressTracker = if (release.targetLang == "tr") SceneParticipantTracker() else null
@@ -831,12 +812,18 @@ object PipelineRunner {
             syncWarning = null,
             // our own EN/JA to TR production is a first-class result, the source was
             // identity-gated and translated in full. whisper transcripts carry one
-            // genuine extra uncertainty, so they sit a notch lower.
-            qualityScore = if (sub.sourceName.contains("Whisper")) Quality.WHISPER else Quality.TRANSLATED,
+            // genuine extra uncertainty, so they sit a notch lower. cues we could not
+            // translate come straight off the top: they are the part of the file that
+            // does not do what the result claims to do.
+            qualityScore = Quality.withUntranslated(
+                if (sub.sourceName.contains("Whisper")) Quality.WHISPER else Quality.TRANSLATED,
+                untranslatedPct
+            ),
             // only claimed when the sanitize repair measurably rewrote a line. the same
             // rail as Quality.CEILING: we don't assert what we couldn't verify, so a file
             // MT never softened simply carries no badge.
-            tonePreserved = toneHardened
+            tonePreserved = toneHardened,
+            untranslatedPct = untranslatedPct
         )
     }
 }

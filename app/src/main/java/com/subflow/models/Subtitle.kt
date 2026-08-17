@@ -38,7 +38,13 @@ data class SubtitleResult(
     /** 0-100 quality/fit score: tag match + source tier + sync confidence */
     val qualityScore: Int = 0,
     /** true only when our post-processor applied uncensoring and tone preservation. false for human translations. */
-    val tonePreserved: Boolean = false
+    val tonePreserved: Boolean = false,
+    /**
+     * percentage of cues still in the source language, 0 for a complete file. The pipeline
+     * delivers a partly translated file rather than nothing; this is how the user finds
+     * that out without opening it.
+     */
+    val untranslatedPct: Int = 0
 )
 
 /** page that might host the subtitle but couldn't be auto-downloaded. offered as a manual lead. */

@@ -60,6 +60,7 @@
     <string name="field_episode_end">Посл. серия</string>
     <string name="save_downloads">⬇ В Загрузки</string>
     <string name="uncensored_badge">Без цензуры · тон сохранён</string>
+    <string name="untranslated_badge">%1$d%% не переведено</string>
     <string name="preview">▶ Просмотр</string>
     <string name="ob_skip">Пропустить</string>
     <string name="ob_next">Далее</string>

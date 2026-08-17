@@ -31,6 +31,7 @@ object ResultStore {
                         .put("syncWarning", r.syncWarning ?: JSONObject.NULL)
                         .put("qualityScore", r.qualityScore)
                         .put("tonePreserved", r.tonePreserved)
+                        .put("untranslatedPct", r.untranslatedPct)
                 )
             }
             File(dir(context), "$id.json").writeText(arr.toString(), Charsets.UTF_8)
@@ -56,7 +57,8 @@ object ResultStore {
                     episodeLabel = o.getString("episodeLabel"),
                     syncWarning = if (o.isNull("syncWarning")) null else o.getString("syncWarning"),
                     qualityScore = o.optInt("qualityScore", 0),
-                    tonePreserved = o.optBoolean("tonePreserved", false)
+                    tonePreserved = o.optBoolean("tonePreserved", false),
+                    untranslatedPct = o.optInt("untranslatedPct", 0)
                 )
             }.ifEmpty { null }
         } catch (e: Throwable) {

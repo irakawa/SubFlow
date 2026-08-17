@@ -60,6 +60,7 @@
     <string name="field_episode_end">Letzte Ep.</string>
     <string name="save_downloads">⬇ In Downloads</string>
     <string name="uncensored_badge">Unzensiert · Ton erhalten</string>
+    <string name="untranslated_badge">%1$d%% nicht übersetzt</string>
     <string name="preview">▶ Vorschau</string>
     <string name="ob_skip">Überspringen</string>
     <string name="ob_next">Weiter</string>

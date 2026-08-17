@@ -235,10 +235,11 @@ private fun ResultCard(result: SubtitleResult, viewModel: SearchViewModel) {
                         "${result.sizeBytes / 1024}KB · ${result.method}",
                     style = MaterialTheme.typography.bodySmall
                 )
-                if (result.qualityScore > 0 || result.tonePreserved) {
+                if (result.qualityScore > 0 || result.tonePreserved || result.untranslatedPct > 0) {
                     Spacer(Modifier.height(6.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         if (result.qualityScore > 0) QualityBadge(result.qualityScore)
+                        if (result.untranslatedPct > 0) UntranslatedBadge(result.untranslatedPct)
                         if (result.tonePreserved) ToneBadge()
                     }
                 }
@@ -381,6 +382,25 @@ private fun NudgeButton(label: String, onClick: () -> Unit) {
             .padding(horizontal = 8.dp, vertical = 5.dp)
     ) {
         Text(label, style = MaterialTheme.typography.labelSmall, color = SubFlowColors.TextPrimary)
+    }
+}
+
+// badge: part of the file never left the source language. always shown in the error
+// colour — this is the one thing a user cannot discover without opening the file.
+@Composable
+private fun UntranslatedBadge(pct: Int) {
+    val color = SubFlowColors.Error
+    Box(
+        Modifier
+            .background(color.copy(alpha = 0.12f), RoundedCornerShape(50))
+            .border(1.dp, color.copy(alpha = 0.5f), RoundedCornerShape(50))
+            .padding(horizontal = 10.dp, vertical = 3.dp)
+    ) {
+        Text(
+            stringResource(R.string.untranslated_badge, pct),
+            style = MaterialTheme.typography.labelSmall,
+            color = color
+        )
     }
 }
 

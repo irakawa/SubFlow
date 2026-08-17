@@ -60,6 +60,7 @@
     <string name="field_episode_end">Son blm.</string>
     <string name="save_downloads">⬇ İndirilenler\'e</string>
     <string name="uncensored_badge">Sansürsüz · ton korundu</string>
+    <string name="untranslated_badge">%%%1$d çevrilmedi</string>
     <string name="preview">▶ Önizle</string>
     <string name="ob_skip">Atla</string>
     <string name="ob_next">İleri</string>
