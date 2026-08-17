@@ -224,7 +224,7 @@
     <string name="field_http">Video doğrudan linki (opsiyonel)</string>
     <string name="http_guide_link">Nasıl?</string>
     <string name="http_guide_title">Video linkinden altyazı çekme</string>
-    <string name="http_guide_body">Video dosyasına DOĞRUDAN bir linkin varsa (.mkv veya .mp4 ile biten), SubFlow içinden yalnızca altyazıyı çeker — video asla indirilmez.\n\n1. Doğrudan bir video linki bul. Link doğrudan dosyayı göstermeli (…/bolum.mkv), bir web sayfasını değil.\n2. O linki kopyala.\n3. Bu alana yapıştır.\n4. Başlat\'a bas.\n\nVideoda senin dilinde altyazı varsa aynen kullanılır; yoksa İngilizce/Japonca izi çekilip senin için çevrilir.\n\nNormal arama için burayı boş bırak.</string>
+    <string name="http_guide_body">Video dosyasına DOĞRUDAN bir linkin varsa (.mkv veya .mp4 ile biten), SubFlow ondan yalnızca altyazıyı kaydeder. Altyazı izine ulaşmak için video ağ üzerinden okunur, ama videodan hiçbir şey saklanmaz.\n\n1. Doğrudan bir video linki bul. Link doğrudan dosyayı göstermeli (…/bolum.mkv), bir web sayfasını değil.\n2. O linki kopyala.\n3. Bu alana yapıştır.\n4. Başlat\'a bas.\n\nVideoda senin dilinde altyazı varsa aynen kullanılır; yoksa İngilizce/Japonca izi çekilip senin için çevrilir.\n\nNormal arama için burayı boş bırak.</string>
     <string name="log_torrent_stream">ADIM 4d — Altyazı yalnız torrent\'te; altyazı izi akıtılıyor (video indirilmiyor)</string>
     <string name="log_torrent_data_warning">Torrent yöntemi: video parçaları inecek, en fazla %1$d MB</string>
     <string name="log_torrent_metered_skip">Mobil veride atlandı — bu yöntem video parçası indirir. Wi-Fi\'de tekrar dene.</string>

@@ -219,7 +219,7 @@
     <string name="field_http">Enlace directo del vídeo (opcional)</string>
     <string name="http_guide_link">¿Cómo?</string>
     <string name="http_guide_title">Extraer subtítulo de un enlace</string>
-    <string name="http_guide_body">Si tienes un enlace DIRECTO al vídeo (termina en .mkv/.mp4), SubFlow extrae solo el subtítulo — el vídeo nunca se descarga.\n\n1. Consigue un enlace directo (…/episodio.mkv), no una página web.\n2. Copia el enlace.\n3. Pégalo aquí.\n4. Pulsa Iniciar.\n\nDéjalo vacío para una búsqueda normal.</string>
+    <string name="http_guide_body">Si tienes un enlace DIRECTO al vídeo (termina en .mkv/.mp4), SubFlow guarda solo el subtítulo. El vídeo se lee por la red para llegar a la pista de subtítulos, pero no se conserva nada de él.\n\n1. Consigue un enlace directo (…/episodio.mkv), no una página web.\n2. Copia el enlace.\n3. Pégalo aquí.\n4. Pulsa Iniciar.\n\nDéjalo vacío para una búsqueda normal.</string>
     <string name="log_torrent_stream">PASO 4d — Subtítulo solo en un torrent; transmitiendo su pista (sin descargar vídeo)</string>
     <string name="log_torrent_data_warning">Método torrent: se descargarán fragmentos de vídeo, hasta %1$d MB</string>
     <string name="log_torrent_metered_skip">Omitido con datos móviles — este método descarga fragmentos de vídeo. Reinténtalo con Wi-Fi.</string>

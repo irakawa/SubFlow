@@ -219,7 +219,7 @@
     <string name="field_http">Direkter Video-Link (optional)</string>
     <string name="http_guide_link">Wie?</string>
     <string name="http_guide_title">Untertitel aus einem Video-Link</string>
-    <string name="http_guide_body">Wenn du einen DIREKTEN Link zur Videodatei hast (endet auf .mkv/.mp4), holt SubFlow nur den Untertitel heraus — das Video wird nie geladen.\n\n1. Direkten Video-Link finden (…/folge.mkv), keine Webseite.\n2. Link kopieren.\n3. Hier einfügen.\n4. Start drücken.\n\nLeer lassen für eine normale Suche.</string>
+    <string name="http_guide_body">Wenn du einen DIREKTEN Link zur Videodatei hast (endet auf .mkv/.mp4), speichert SubFlow nur den Untertitel. Das Video wird über das Netz gelesen, um die Untertitelspur zu erreichen, aber nichts davon wird behalten.\n\n1. Direkten Video-Link finden (…/folge.mkv), keine Webseite.\n2. Link kopieren.\n3. Hier einfügen.\n4. Start drücken.\n\nLeer lassen für eine normale Suche.</string>
     <string name="log_torrent_stream">SCHRITT 4d — Untertitel nur im Torrent; Untertitelspur wird gestreamt (kein Video-Download)</string>
     <string name="log_torrent_data_warning">Torrent-Methode: Videostücke werden geladen, bis zu %1$d MB</string>
     <string name="log_torrent_metered_skip">Bei mobilen Daten übersprungen — diese Methode lädt Videostücke. Im WLAN erneut versuchen.</string>

@@ -229,7 +229,7 @@
     <string name="field_http">Video direct link (optional)</string>
     <string name="http_guide_link">How?</string>
     <string name="http_guide_title">Extract subtitle from a video link</string>
-    <string name="http_guide_body">If you have a DIRECT link to the video file (ends in .mkv or .mp4), SubFlow pulls only the subtitle out of it — the video is never downloaded.\n\n1. Find a direct video link. It must point straight at the file (…/episode.mkv), not at a web page.\n2. Copy that link.\n3. Paste it in this field.\n4. Press Start.\n\nIf the video has a subtitle in your language it\'s used as-is; otherwise its English/Japanese track is pulled out and translated for you.\n\nLeave this empty for a normal search.</string>
+    <string name="http_guide_body">If you have a DIRECT link to the video file (ends in .mkv or .mp4), SubFlow saves only the subtitle from it. The video is read over the network to reach the subtitle track, but nothing of it is kept.\n\n1. Find a direct video link. It must point straight at the file (…/episode.mkv), not at a web page.\n2. Copy that link.\n3. Paste it in this field.\n4. Press Start.\n\nIf the video has a subtitle in your language it\'s used as-is; otherwise its English/Japanese track is pulled out and translated for you.\n\nLeave this empty for a normal search.</string>
     <string name="log_torrent_stream">STEP 4d — Subtitle only in a torrent; streaming its subtitle track (video not downloaded)</string>
     <string name="log_torrent_data_warning">Torrent method: video pieces will be downloaded, up to %1$d MB</string>
     <string name="log_torrent_metered_skip">Skipped on mobile data — this method downloads video pieces. Retry on Wi-Fi.</string>
