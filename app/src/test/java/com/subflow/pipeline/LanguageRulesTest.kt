@@ -1,13 +1,32 @@
 package com.subflow.pipeline
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * covers the stutter (2.1) and stray "mı/mi" (3.3) rules from
- * SUBFLOW_LANGUAGE_RULES.
+ * covers the uncensored-tone (1), stutter (2.1) and stray "mı/mi" (3.3) rules
+ * from SUBFLOW_LANGUAGE_RULES.
  */
 class LanguageRulesTest {
+
+    // --- 1: the tone claim must be measured, never assumed ---
+
+    @Test
+    fun `a clean line claims no tone hardening`() {
+        val post = PostProcessor("tr")
+        val out = post.processBatch(listOf("Hello there, friend."), listOf("Merhaba dostum."))
+        assertFalse(out.toneHardened)
+    }
+
+    @Test
+    fun `a softened line reports the hardening it actually applied`() {
+        val post = PostProcessor("tr")
+        val out = post.processBatch(listOf("You son of a bitch!"), listOf("Seni kötü adam!"))
+        assertEquals("Seni orospu çocuğu!", out.lines[0])
+        assertTrue(out.toneHardened)
+    }
 
     // --- 3.3: unnecessary "mı/mi" question particle ---
 

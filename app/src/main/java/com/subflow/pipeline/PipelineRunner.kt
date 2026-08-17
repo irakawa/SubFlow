@@ -728,6 +728,9 @@ object PipelineRunner {
         val batchResults = arrayOfNulls<List<String>>(batches.size)
         // providers that failed earlier in this file are tried last on later batches
         val unhealthyProviders = mutableSetOf<String>()
+        // true once the sanitize repair has actually rewritten a line somewhere in this
+        // file. backs the uncensored badge, so it is measured, never assumed.
+        var toneHardened = false
 
         // two passes: batches that fail the first are retried on the second,
         // a rate-limited provider may have recovered by then
@@ -759,6 +762,7 @@ object PipelineRunner {
                         if (!reprocessed.retrySuggested) processed = reprocessed
                     }
                 }
+                if (processed.toneHardened) toneHardened = true
                 if (bi == 0) Log.d("SubFlow", "Post-processor sample: ${processed.lines.firstOrNull()?.take(80)}")
                 // final term policy: "God" always renders as "Tanrı", never "Allah".
                 // guarded per-line so a post-processing quirk can't abort a translation
@@ -823,7 +827,10 @@ object PipelineRunner {
             // identity-gated and translated in full. whisper transcripts carry one
             // genuine extra uncertainty, so they sit a notch lower.
             qualityScore = if (sub.sourceName.contains("Whisper")) Quality.WHISPER else Quality.TRANSLATED,
-            tonePreserved = true // translation path enforces no censorship
+            // only claimed when the sanitize repair measurably rewrote a line. the same
+            // rail as Quality.CEILING: we don't assert what we couldn't verify, so a file
+            // MT never softened simply carries no badge.
+            tonePreserved = toneHardened
         )
     }
 }

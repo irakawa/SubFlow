@@ -12,10 +12,21 @@ class PostProcessor(private val targetLang: String = "tr") {
     /** proper names, never translated */
     private val properNames = mutableSetOf<String>()
 
-    data class BatchResult(val lines: List<String>, val retrySuggested: Boolean)
+    /**
+     * [toneHardened] is the honest answer to "did we restore register on this batch":
+     * true only when the sanitize repair actually ran AND changed a line. It backs the
+     * uncensored badge, so it must never be assumed — an unmeasured claim is worse than
+     * no claim.
+     */
+    data class BatchResult(
+        val lines: List<String>,
+        val retrySuggested: Boolean,
+        val toneHardened: Boolean = false
+    )
 
     fun processBatch(sourceLines: List<String>, translatedLines: List<String>): BatchResult {
         var retry = false
+        var hardened = false
         val out = ArrayList<String>(translatedLines.size)
 
         for (i in translatedLines.indices) {
@@ -26,9 +37,13 @@ class PostProcessor(private val targetLang: String = "tr") {
             if (targetLang == "tr") line = applyGlossary(source, line)
             line = restoreProperNames(source, line)
 
-            // TR only: pull sanitized MT back to the source's register
+            // TR only: pull sanitized MT back to the source's register. only a line the
+            // repair actually changed counts as hardened; detecting sanitization we
+            // couldn't repair is not tone preservation.
             if (targetLang == "tr" && SlangDictionary.looksSanitized(source, line)) {
-                line = SlangDictionary.hardenTranslation(source, line)
+                val restored = SlangDictionary.hardenTranslation(source, line)
+                if (restored != line) hardened = true
+                line = restored
             }
 
             // flag nonsense
@@ -38,7 +53,7 @@ class PostProcessor(private val targetLang: String = "tr") {
 
             out += line
         }
-        return BatchResult(out, retry)
+        return BatchResult(out, retry, hardened)
     }
 
     private val grammarFixes: List<Pair<Regex, String>> = listOf(
