@@ -707,8 +707,14 @@ object PipelineRunner {
             log(LogLevel.INFO, it)
         } ?: return null
         log(LogLevel.INFO, L10n.t(R.string.log_whisper_running))
-        val srt = WhisperEngine.transcribeToSrt(context, wav) { log(LogLevel.WARN, it) }
-        wav.delete()
+        // the wav is deleted whatever happens: transcription is the longest step in the
+        // pipeline and a prime cancel target, and a feature film leaves ~230MB of 16kHz
+        // pcm in the cache if the delete is only on the success path.
+        val srt = try {
+            WhisperEngine.transcribeToSrt(context, wav) { log(LogLevel.WARN, it) }
+        } finally {
+            wav.delete()
+        }
         if (srt != null) log(LogLevel.OK, L10n.t(R.string.log_whisper_ok)) else log(LogLevel.ERROR, L10n.t(R.string.log_whisper_fail))
         return srt
     }
