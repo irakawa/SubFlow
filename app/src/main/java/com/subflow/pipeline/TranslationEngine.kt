@@ -42,6 +42,22 @@ object TranslationEngine {
     data class MtResult(val lines: List<String>, val provider: String)
 
     /**
+     * Runs one provider call, turning a failure into null.
+     *
+     * Cancellation is not a failure. Swallowing it marked healthy providers unhealthy
+     * and wrote "provider failed" lines into the user-facing log while the search was
+     * already being torn down.
+     */
+    internal suspend fun attempt(call: suspend () -> String?): String? =
+        try {
+            call()
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            null
+        }
+
+    /**
      * Translates [lines] into [targetLang], preserving line count.
      *
      * @param unhealthy providers that already failed for this file; tried last so a
@@ -73,12 +89,12 @@ object TranslationEngine {
 
         for ((name, provider) in providers) {
             lastFail = null
-            var result = runCatching { provider() }.getOrNull()
+            var result = attempt { provider() }
             // 429s recover fast, one paced retry beats burning the whole pool
             if (result == null && lastFail?.contains("429") == true) {
                 delay(2000)
                 lastFail = null
-                result = runCatching { provider() }.getOrNull()
+                result = attempt { provider() }
             }
             var failDetail = lastFail
             if (result != null) {

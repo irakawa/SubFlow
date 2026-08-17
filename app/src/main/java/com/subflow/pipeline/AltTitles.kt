@@ -15,18 +15,33 @@ object AltTitles {
 
     private val cache = java.util.concurrent.ConcurrentHashMap<String, List<String>>()
 
-    suspend fun resolve(release: Release): List<String> {
+    suspend fun resolve(release: Release): List<String> = resolveWith(release, ::lookup)
+
+    private suspend fun lookup(release: Release): List<String> = when (release.type) {
+        ContentType.ANIME, ContentType.DONGHUA -> fromAniList(release.title)
+        ContentType.SERIES, ContentType.ANIMATION -> fromTvMaze(release.title)
+        else -> emptyList()
+    }
+
+    internal suspend fun resolveWith(
+        release: Release,
+        lookup: suspend (Release) -> List<String>
+    ): List<String> {
         if (release.title.isBlank()) return emptyList()
         val key = "${release.type.name}:${release.title.lowercase()}"
         cache[key]?.let { return it }
 
-        val titles = runCatching {
-            when (release.type) {
-                ContentType.ANIME, ContentType.DONGHUA -> fromAniList(release.title)
-                ContentType.SERIES, ContentType.ANIMATION -> fromTvMaze(release.title)
-                else -> emptyList()
-            }
-        }.getOrDefault(emptyList())
+        val fetched = try {
+            lookup(release)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e // a cancelled search stays cancelled, and caches nothing
+        } catch (e: Exception) {
+            // a lookup that failed proves nothing about this title. caching the empty
+            // result would erase its alternate names for the rest of the process.
+            return emptyList()
+        }
+
+        val titles = fetched
             .filter { it.isNotBlank() && !it.equals(release.title, ignoreCase = true) }
             .filter { latin(it) } // files are named in Latin script, skip CJK synonyms
             .distinctBy { it.lowercase() }
