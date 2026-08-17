@@ -23,9 +23,35 @@ class LanguageRulesTest {
     @Test
     fun `a softened line reports the hardening it actually applied`() {
         val post = PostProcessor("tr")
-        val out = post.processBatch(listOf("You son of a bitch!"), listOf("Seni kötü adam!"))
-        assertEquals("Seni orospu çocuğu!", out.lines[0])
+        // "kötü adam" is registered as the soft form of "şerefsiz", so only a source that
+        // really used that term may claim the slot
+        val out = post.processBatch(listOf("That motherfucker!"), listOf("O kötü adam!"))
+        assertEquals("O şerefsiz!", out.lines[0])
         assertTrue(out.toneHardened)
+    }
+
+    @Test
+    fun `a marker bound to another term is left alone`() {
+        val post = PostProcessor("tr")
+        // "kötü adam" softens "motherfucker", not "son of a bitch". overwriting it with
+        // "orospu çocuğu" would be the same misattribution in a nicer disguise
+        val out = post.processBatch(listOf("You son of a bitch!"), listOf("Seni kötü adam!"))
+        assertEquals("Seni kötü adam!", out.lines[0])
+        assertFalse(out.toneHardened)
+    }
+
+    @Test
+    fun `a weak slot is never filled with an unrelated source term`() {
+        val post = PostProcessor("tr")
+        // "Tanrım" is the correct rendering of "Oh my God", not a softened "fucking".
+        // Filling it with the swearword's equivalent both invents profanity where there
+        // was none and still loses the one that was actually dropped.
+        val out = post.processBatch(
+            listOf("Oh my God, that fucking hurts!"),
+            listOf("Aman Tanrım, bu çok acıyor!")
+        )
+        assertEquals("Aman Tanrım, bu çok acıyor!", out.lines[0])
+        assertFalse(out.toneHardened)
     }
 
     // --- 1: sanitize detection must not depend on a known soft marker ---
@@ -51,8 +77,9 @@ class LanguageRulesTest {
     @Test
     fun `the dictionary now reaches a line that carries only a soft marker`() {
         val post = PostProcessor("tr")
-        val out = post.processBatch(listOf("That fucking bastard!"), listOf("Kahrolası herif!"))
-        assertEquals("sikik herif!", out.lines[0])
+        // "kahrolası" is the soft form of "lanet olası", which is what "goddamn" renders as
+        val out = post.processBatch(listOf("That goddamn bastard!"), listOf("Kahrolası herif!"))
+        assertEquals("lanet olası herif!", out.lines[0])
         assertTrue(out.toneHardened)
     }
 

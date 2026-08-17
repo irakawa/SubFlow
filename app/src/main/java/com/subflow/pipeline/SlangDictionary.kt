@@ -158,9 +158,12 @@ object SlangDictionary {
         return strongSourceTokens.any { lower.contains(it) }
     }
 
-    private val weakTargetTokens = listOf(
-        "tanrım", "aman tanrım", "hay aksi", "kahretsin", "lanet", "kötü adam", "aptal"
-    )
+    // NOTE: there is deliberately no generic "weak token" list any more. It used to hold
+    // "tanrım", "kahretsin", "lanet" and "aptal" — all of them renderings mega_dictionary
+    // itself picks, so the repair treated its own correct output as damage. Worse, any
+    // such token could be used as a slot for any source term, which is how
+    // "Aman Tanrım, bu çok acıyor!" became "Aman sikik, ...". The only slots left are the
+    // [sanitizedMarkers] keys, and each is bound to one specific term (see below).
 
     private val strongTargetTokens = listOf(
         "siktir", "bok", "orospu", "piç", "kaltak", "şerefsiz", "göt", "yavşak", "sıçayım", "lan"
@@ -180,38 +183,34 @@ object SlangDictionary {
         return strongTargetTokens.none { lowerTarget.contains(it) }
     }
 
-    // apply the dictionary's hard equivalent to the target
+    /**
+     * Restores the source's register on a line MT softened.
+     *
+     * A soft marker is only overwritten by the term it is actually the softening OF.
+     * [sanitizedMarkers] already encodes that binding: every one of its values is an
+     * [enToTr] value, so "kötü adam" is the soft form of whatever term renders as
+     * "şerefsiz" (motherfucker), and nothing else may claim that slot. Without the
+     * binding the repair grabbed the first weak word in the line, which is how a
+     * dropped "fucking" landed on an unrelated "Tanrım".
+     *
+     * When no marker in the line is bound to a term the source actually used, the line
+     * is returned untouched — an unrepairable line is left alone rather than guessed at.
+     */
     fun hardenTranslation(sourceLine: String, targetLine: String): String {
         var result = targetLine
         val lowerSource = sourceLine.lowercase()
-        // longest matches first
+        // longest matches first, so "son of a bitch" wins over "bitch"
         val hits = enToTr.entries
             .filter { lowerSource.contains(it.key) }
             .sortedByDescending { it.key.length }
-        for ((en, tr) in hits) {
-            // skip if the target already has a harsh equivalent
+        for ((_, tr) in hits) {
+            // skip if the target already carries this harsh equivalent
             if (result.lowercase().contains(tr.lowercase())) continue
-            // swap a soft marker for the harsh one
-            var replaced = false
-            for ((weak, _) in sanitizedMarkers) {
-                if (result.lowercase().contains(weak)) {
-                    result = result.replace(weak, tr, ignoreCase = true)
-                    replaced = true
-                    break
-                }
-            }
-            if (!replaced && SlangDictionary.enToTr.containsKey(en)) {
-                // replace weak generic expressions
-                for (weakToken in weakTargetTokens) {
-                    if (result.lowercase().contains(weakToken)) {
-                        result = result.replace(weakToken, tr, ignoreCase = true)
-                        replaced = true
-                        break
-                    }
-                }
-            }
-            // couldn't place it cleanly, skip and keep hardening the rest
-            if (!replaced) continue
+            // the only eligible slots are markers registered as the soft form of THIS term
+            val slot = sanitizedMarkers.entries
+                .firstOrNull { (weak, harsh) -> harsh == tr && result.lowercase().contains(weak) }
+                ?: continue
+            result = result.replace(slot.key, tr, ignoreCase = true)
         }
         return result
     }
