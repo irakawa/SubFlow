@@ -67,6 +67,23 @@ object TorrentSubtitle {
         "dht.libtorrent.org:25401,router.bittorrent.com:6881,router.utorrent.com:6881," +
             "dht.transmissionbt.com:6881,router.bitcomet.com:6881,dht.aelitis.com:6881"
 
+    /**
+     * Session tuned to take from the swarm and give back as little as the protocol allows.
+     *
+     * The user asked for a subtitle; they did not ask to distribute a film. What is
+     * switched off here:
+     *  - unchoke slots set to 0, with the fixed-slots choker so that limit is the one
+     *    that decides. No unchoked peer means no peer is served payload.
+     *  - upload rate limited to 1 byte/s. It cannot be 0: libtorrent reads 0 as
+     *    "unlimited", so 1 is the floor.
+     *  - outgoing connections while seeding disabled, and the seed slot count set to 0.
+     *
+     * What still leaves the device, and cannot be switched off while the feature works
+     * at all: we announce to trackers and the DHT, because that is how peers are found,
+     * so the swarm sees this IP. Peers may connect to us, and the handshake, bitfield
+     * and HAVE messages are exchanged. That is protocol overhead rather than payload,
+     * but it is not nothing, and the README disclaimer says so.
+     */
     private fun tunedSession(): SessionManager {
         val sp = SettingsPack()
             .enableDht(true)
@@ -74,6 +91,16 @@ object TorrentSubtitle {
             .setString(settings_pack.string_types.dht_bootstrap_nodes.swigValue(), DHT_ROUTERS)
             .setBoolean(settings_pack.bool_types.announce_to_all_tiers.swigValue(), true)
             .setBoolean(settings_pack.bool_types.announce_to_all_trackers.swigValue(), true)
+            // 0 would mean "unlimited" here, so 1 byte/s is the real floor
+            .setInteger(settings_pack.int_types.upload_rate_limit.swigValue(), 1)
+            // the rate-based choker ignores the slot limit, so pin the algorithm first
+            .setInteger(
+                settings_pack.int_types.choking_algorithm.swigValue(),
+                settings_pack.choking_algorithm_t.fixed_slots_choker.swigValue()
+            )
+            .setInteger(settings_pack.int_types.unchoke_slots_limit.swigValue(), 0)
+            .setInteger(settings_pack.int_types.active_seeds.swigValue(), 0)
+            .setBoolean(settings_pack.bool_types.seeding_outgoing_connections.swigValue(), false)
         return SessionManager().apply { start(SessionParams(sp)) }
     }
 
@@ -220,6 +247,8 @@ object TorrentSubtitle {
             // download only the chosen file so ffmpeg's range reads resolve quickly
             val priorities = Array(files.numFiles()) { if (it == fileIndex) Priority.NORMAL else Priority.IGNORE }
             handle.prioritizeFiles(priorities)
+            // belt and braces over the session-wide limit: this torrent gives back 1 byte/s
+            runCatching { handle.setUploadLimit(1) }
             handle.resume()
 
             val videoFile = File(dir, files.filePath(fileIndex))
@@ -252,6 +281,9 @@ object TorrentSubtitle {
             // per-magnet teardown only. the caller stops the shared session, so the dht
             // stays warm for the next magnet.
             runCatching { server?.close() }
+            // pause before remove: stop answering peers immediately rather than at
+            // whatever point the async remove finally lands
+            runCatching { handle?.pause() }
             runCatching { handle?.let { session.remove(it) } }
             runCatching { dlDir?.deleteRecursively() }
         }
