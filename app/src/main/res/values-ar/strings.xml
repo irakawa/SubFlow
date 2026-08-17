@@ -221,5 +221,8 @@
     <string name="http_guide_title">استخراج الترجمة من رابط</string>
     <string name="http_guide_body">إذا كان لديك رابط مباشر لملف الفيديو (ينتهي بـ .mkv/.mp4)، يستخرج SubFlow الترجمة فقط — لا يُنزّل الفيديو أبدًا.\n\n1. احصل على رابط مباشر (…/episode.mkv) لا صفحة ويب.\n2. انسخ الرابط.\n3. الصقه هنا.\n4. اضغط ابدأ.\n\nاتركه فارغًا للبحث العادي.</string>
     <string name="log_torrent_stream">الخطوة 4d — الترجمة داخل تورنت فقط؛ بث مسار الترجمة (دون تنزيل الفيديو)</string>
+    <string name="log_torrent_data_warning">طريقة التورنت: ستُنزَّل أجزاء من الفيديو، حتى %1$d ميغابايت</string>
+    <string name="log_torrent_metered_skip">تم التخطي على بيانات الجوال — هذه الطريقة تنزّل أجزاء فيديو. أعد المحاولة عبر Wi-Fi.</string>
+    <string name="log_torrent_budget_hit">توقّف عند حد %1$d ميغابايت قبل العثور على مسار ترجمة</string>
     <string name="api_hint_subsource">تغطية تركية قوية · مفتاح مجاني من ملفك الشخصي</string>
 </resources>

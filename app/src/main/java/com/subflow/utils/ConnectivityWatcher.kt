@@ -47,6 +47,20 @@ object ConnectivityWatcher {
         true // if the check itself fails, let the caller try
     }
 
+    /**
+     * true when the active network charges for or counts traffic (mobile data, or a
+     * hotspot the user marked as metered). Unknown state reads as metered: a wrong
+     * "free" answer spends the user's money, a wrong "metered" one only costs a retry.
+     */
+    fun isMetered(context: Context): Boolean = try {
+        val cm = context.getSystemService(ConnectivityManager::class.java)
+        val caps = cm?.getNetworkCapabilities(cm.activeNetwork)
+        if (caps == null) true
+        else !caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED)
+    } catch (e: Exception) {
+        true
+    }
+
     private fun notifyQueueReady(context: Context, count: Int) {
         val nm = context.getSystemService(NotificationManager::class.java) ?: return
         nm.createNotificationChannel(

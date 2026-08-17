@@ -221,5 +221,8 @@
     <string name="http_guide_title">Извлечь субтитры из ссылки</string>
     <string name="http_guide_body">Если у вас есть ПРЯМАЯ ссылка на видеофайл (.mkv/.mp4), SubFlow извлечёт только субтитры — видео не скачивается.\n\n1. Найдите прямую ссылку (…/episode.mkv), не веб-страницу.\n2. Скопируйте её.\n3. Вставьте сюда.\n4. Нажмите «Начать».\n\nОставьте пустым для обычного поиска.</string>
     <string name="log_torrent_stream">ШАГ 4d — Субтитры только в торренте; потоковая дорожка (видео не скачивается)</string>
+    <string name="log_torrent_data_warning">Торрент-метод: будут загружены фрагменты видео, до %1$d МБ</string>
+    <string name="log_torrent_metered_skip">Пропущено на мобильных данных — метод загружает фрагменты видео. Повторите по Wi-Fi.</string>
+    <string name="log_torrent_budget_hit">Остановлено на пределе %1$d МБ до того, как нашлась дорожка субтитров</string>
     <string name="api_hint_subsource">Хорошее покрытие турецкого · бесплатный ключ в профиле</string>
 </resources>

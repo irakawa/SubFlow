@@ -9,7 +9,10 @@ import com.frostwire.jlibtorrent.SettingsPack
 import com.frostwire.jlibtorrent.TorrentHandle
 import com.frostwire.jlibtorrent.TorrentInfo
 import com.frostwire.jlibtorrent.swig.settings_pack
+import com.subflow.R
+import com.subflow.utils.ConnectivityWatcher
 import com.subflow.utils.FileUtils
+import com.subflow.utils.L10n
 import java.io.File
 import java.io.RandomAccessFile
 import java.net.ServerSocket
@@ -38,6 +41,24 @@ object TorrentSubtitle {
     private const val OVERALL_TIMEOUT_MS = 150_000L
     private const val METADATA_TIMEOUT_MS = 75_000L
     private const val DHT_WARMUP_MS = 12_000L // max time to wait for the DHT to find nodes
+
+    /**
+     * Hard ceiling on payload pulled from the swarm, across every magnet in one attempt.
+     *
+     * ffmpeg has no index for the container, so it seeks around to find the subtitle
+     * track and libtorrent fetches whatever pieces those seeks land on. Parsing the MKV
+     * SeekHead/Cues would make the reads targeted; until then this is what keeps a
+     * subtitle lookup from quietly pulling a gigabyte of video onto the device. It is a
+     * harm bound, not a technical requirement — hitting it aborts the attempt.
+     */
+    const val MAX_DOWNLOAD_BYTES = 256L * 1024 * 1024
+
+    /** libtorrent reports -1 before a handle produces real status; that is not over budget. */
+    fun overBudget(downloadedBytes: Long): Boolean =
+        downloadedBytes >= MAX_DOWNLOAD_BYTES
+
+    fun megabytes(bytes: Long): Int =
+        if (bytes <= 0) 0 else (bytes / (1024 * 1024)).toInt()
 
     // dht bootstrap routers. on mobile the default start() often reaches no dht nodes,
     // so magnet metadata never resolves. setting these and waiting for the node count to
@@ -107,6 +128,17 @@ object TorrentSubtitle {
         onLog: suspend (String) -> Unit
     ): String? = withContext(Dispatchers.IO) {
         if (magnets.isEmpty()) return@withContext null
+
+        // this path costs real data, so say so before spending any of it
+        onLog(L10n.t(R.string.log_torrent_data_warning, megabytes(MAX_DOWNLOAD_BYTES)))
+        if (ConnectivityWatcher.isMetered(context)) {
+            // the user asked for a subtitle, not a data bill. Wi-Fi is one tap away.
+            onLog(L10n.t(R.string.log_torrent_metered_skip))
+            return@withContext null
+        }
+        // a previous run that was killed outright never reached its finally block
+        runCatching { File(context.cacheDir, "torrent").deleteRecursively() }
+
         val session = tunedSession()
         try {
             // wait for the dht to acquire nodes before asking for peers. done once here,
@@ -191,13 +223,22 @@ object TorrentSubtitle {
             handle.resume()
 
             val videoFile = File(dir, files.filePath(fileIndex))
-            server = LoopbackFileServer(handle, ti, fileIndex, videoFile).also { it.start() }
+            // measured at session level so the ceiling covers every magnet in this attempt,
+            // not each one separately
+            server = LoopbackFileServer(handle, ti, fileIndex, videoFile) {
+                runCatching { session.totalDownload() }.getOrDefault(0L)
+            }.also { it.start() }
             val url = "http://127.0.0.1:${server.port}/video"
             // shown to the user, so it says what actually happens: the pieces the subtitle
             // track spans are fetched, not the whole file, and not nothing
             onLog("torrent: altyazı izi akıtılıyor — yalnızca izin kapsadığı parçalar iniyor")
 
             val extracted = FFmpegTools.extractSubtitleFromHttp(url, context.cacheDir, release.targetLang) { onLog(it) }
+            if (server.budgetExceeded) {
+                // say why it stopped, otherwise this reads as "no subtitle in this torrent"
+                onLog(L10n.t(R.string.log_torrent_budget_hit, megabytes(MAX_DOWNLOAD_BYTES)))
+                return null
+            }
             val content = extracted?.let { (file, _) ->
                 val text = FileUtils.toUtf8(file.readBytes()); file.delete(); text
             }
@@ -234,8 +275,14 @@ object TorrentSubtitle {
         private val handle: TorrentHandle,
         private val ti: TorrentInfo,
         private val fileIndex: Int,
-        private val file: File
+        private val file: File,
+        private val downloadedBytes: () -> Long
     ) {
+        /** set when the attempt was stopped by the data ceiling rather than by not finding a track. */
+        @Volatile
+        var budgetExceeded = false
+            private set
+
         private val socket = ServerSocket(0, 1, java.net.InetAddress.getByName("127.0.0.1"))
         val port: Int get() = socket.localPort
         @Volatile private var running = true
@@ -330,6 +377,13 @@ object TorrentSubtitle {
                     // abort on shutdown, otherwise we'd serve zero-filled bytes as if real
                     if (!running) return false
                     if (System.currentTimeMillis() > deadline) return false
+                    // the ceiling is checked here because this is the only place that waits
+                    // on the swarm: every byte this attempt costs arrives during this loop
+                    if (overBudget(downloadedBytes())) {
+                        budgetExceeded = true
+                        running = false // stop serving, don't start another range
+                        return false
+                    }
                     Thread.sleep(120)
                 }
             }
