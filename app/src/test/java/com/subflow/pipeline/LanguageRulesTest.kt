@@ -75,6 +75,26 @@ class LanguageRulesTest {
     }
 
     @Test
+    fun `an innocent word is not mistaken for harsh language`() {
+        // every one of these merely contains "lan" or "göt". reading them as harsh
+        // silently closes the gate on exactly the lines the repair exists for.
+        assertTrue(SlangDictionary.looksSanitized("Fuck this!", "Bu koca bir yalan!"))
+        assertTrue(SlangDictionary.looksSanitized("Fuck this!", "Varsayılan plan buydu."))
+        assertTrue(SlangDictionary.looksSanitized("Fuck this!", "Onu içeri götürdü."))
+        assertTrue(SlangDictionary.looksSanitized("Fuck this!", "Atlanır böyle şeyler."))
+    }
+
+    @Test
+    fun `a genuinely harsh line still counts as register preserved`() {
+        assertFalse(SlangDictionary.looksSanitized("Fuck this!", "Siktir git!"))
+        assertFalse(SlangDictionary.looksSanitized("Fuck this!", "Gel buraya lan!"))
+        assertFalse(SlangDictionary.looksSanitized("Fuck this!", "Boktan bir durum."))
+        // "lanet" is the dictionary's own rendering for "goddamn", so it is harsh here,
+        // never a soft marker
+        assertFalse(SlangDictionary.looksSanitized("Goddamn it!", "Lanet olsun!"))
+    }
+
+    @Test
     fun `the dictionary now reaches a line that carries only a soft marker`() {
         val post = PostProcessor("tr")
         // "kahrolası" is the soft form of "lanet olası", which is what "goddamn" renders as

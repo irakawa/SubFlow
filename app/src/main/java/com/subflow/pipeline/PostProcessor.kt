@@ -134,19 +134,11 @@ class PostProcessor(private val targetLang: String = "tr") {
             // MT lowercased the name, restore it
             val lowered = name.lowercase()
             if (out.contains(lowered) && !out.contains(name)) {
-                out = out.replace(wholeWord(lowered), name)
+                out = out.replace(TextMatch.wholeWord(lowered), name)
             }
         }
         return out
     }
-
-    /**
-     * whole-word matcher for [word]. `\b` is ASCII-only here, so it would happily fire
-     * inside "kanıyor" (it reads "ı" as a non-word char) and rewrite an ordinary Turkish
-     * word into a name. Unicode letter lookarounds don't.
-     */
-    private fun wholeWord(word: String): Regex =
-        Regex("(?<![\\p{L}\\p{N}])${Regex.escape(word)}(?![\\p{L}\\p{N}])")
 
     private val commonEnglishWords = setOf(
         "The", "This", "That", "What", "When", "Where", "Why", "How",

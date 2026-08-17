@@ -165,9 +165,25 @@ object SlangDictionary {
     // "Aman Tanrım, bu çok acıyor!" became "Aman sikik, ...". The only slots left are the
     // [sanitizedMarkers] keys, and each is bound to one specific term (see below).
 
-    private val strongTargetTokens = listOf(
-        "siktir", "bok", "orospu", "piç", "kaltak", "şerefsiz", "göt", "yavşak", "sıçayım", "lan"
+    // harsh stems that take Turkish suffixes freely ("boktan", "orospunun", "lanetli"):
+    // matched at a word start, suffix free to follow. "lanet" belongs here because it is
+    // mega_dictionary's own rendering for "goddamn" — it is harsh output, never a soft
+    // marker, which is the contradiction this list used to carry both ways.
+    private val strongTargetStems = listOf(
+        "siktir", "bok", "orospu", "piç", "kaltak", "şerefsiz", "yavşak", "sıçayım", "lanet"
     )
+
+    // tokens that are also the opening of ordinary words: "göt" opens the whole "götür-"
+    // verb, "lan" sits inside yalan/plan/kullanılan/varsayılan. Only a standalone word
+    // counts. The cost is missing an inflected "götüne"; the benefit is that an innocent
+    // line is never read as harsh, which used to shut the gate on the very lines this
+    // repair exists for.
+    private val strongTargetWords = listOf("lan", "göt")
+
+    /** true when the line already carries harsh language of its own. */
+    private fun hasHarshEquivalent(lowerLine: String): Boolean =
+        strongTargetStems.any { TextMatch.wordStart(it).containsMatchIn(lowerLine) } ||
+            strongTargetWords.any { TextMatch.wholeWord(it).containsMatchIn(lowerLine) }
 
     /**
      * sanitized = the source swore and the target carries no harsh equivalent.
@@ -179,8 +195,7 @@ object SlangDictionary {
      */
     fun looksSanitized(sourceLine: String, targetLine: String): Boolean {
         if (!sourceHasProfanity(sourceLine)) return false
-        val lowerTarget = targetLine.lowercase()
-        return strongTargetTokens.none { lowerTarget.contains(it) }
+        return !hasHarshEquivalent(targetLine.lowercase())
     }
 
     /**
