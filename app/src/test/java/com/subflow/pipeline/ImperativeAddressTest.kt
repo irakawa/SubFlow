@@ -16,7 +16,7 @@ class ImperativeAddressTest {
 
     private fun fix(source: String, translated: String, t: SceneParticipantTracker): String {
         val a = t.next(source)
-        return GrammarFixer.fixPluralImperative(source, GrammarFixer.fix(translated, a), a)
+        return GrammarFixer.fixPluralImperative(source, "en", GrammarFixer.fix(translated, a), a)
     }
 
     // --- the reported defect ---

@@ -104,56 +104,101 @@ object GrammarFixer {
     /** below this a stem is more likely an irregular remnant ("yiyiniz" -> "yi", stem "ye"). */
     private const val MIN_STEM = 3
 
+    /** source languages whose grammar [looksImperative] actually knows. */
+    private val englishTags = setOf("en", "eng", "english")
+
+    // "-ınız" is the second-person-plural possessive as often as it is an imperative
+    // suffix: anahtarınız is your key, telefonunuz is your phone. When the source says
+    // whose it is, the Turkish word is a noun and there is nothing here to conjugate.
+    private val possessiveSource = Regex("""\b(your|yours)\b""", RegexOption.IGNORE_CASE)
+
+    // the predicate is the last word of the line. Turkish puts the verb there, and every
+    // other -ınız on the line is something's owner, not an order.
+    private val finalWord = Regex("""(?<![\p{L}\p{N}])(\p{L}+)(?=[^\p{L}\p{N}]*$)""")
+
     /**
      * Reduces a polite plural imperative to the singular, for one informal addressee.
      *
-     * Needs [source] because the Turkish suffix is ambiguous on its own: "-ınız" is also
-     * the second-person-plural possessive, so "kitabınız" (your book) is spelled like an
-     * imperative and is not one. English tells them apart — an imperative has no subject —
-     * and getting this wrong turns a noun into a verb stem, so the source has the final say.
+     * Four things have to hold, because the cost of a wrong call is a noun with its
+     * ending sawn off — "anahtarınız" (your key) became "anahtar", "oğlunuz" (your son)
+     * became "oğl". Morphology alone cannot tell a verb from a noun here, so the source
+     * decides and it has to be a source we can actually read:
+     *
+     *  1. [sourceLang] is English. [looksImperative] is a list of English verbs; on a
+     *     Japanese or German line nothing matches it, and a list that matches nothing
+     *     used to mean "no evidence against", which read every line as an order.
+     *  2. The source does not say "your". Then the Turkish word is a possessive.
+     *  3. The source opens with a verb that gives orders — a whitelist, so an opener
+     *     nobody thought of means no fix rather than a mangled noun.
+     *  4. Only the final word is touched. Everything earlier on the line is a subject
+     *     or an object whatever the source says.
      */
-    fun fixPluralImperative(source: String, translated: String, addressee: Addressee): String {
+    fun fixPluralImperative(
+        source: String,
+        sourceLang: String,
+        translated: String,
+        addressee: Addressee
+    ): String {
         if (addressee.plurality != Plurality.SINGLE) return translated
         if (addressee.formality == Formality.FORMAL) return translated // "siz" is the respect
+        if (sourceLang.lowercase(Locale.ROOT) !in englishTags) return translated
+        if (possessiveSource.containsMatchIn(source)) return translated
         if (!looksImperative(source)) return translated
 
-        return politeImperative.replace(translated) { m ->
-            val stem = m.groupValues[1]
-            val buffer = m.groupValues[2] // the "y" that joins a vowel-final stem
-            val last = stem.lastOrNull()
-            when {
-                stem.length < MIN_STEM -> m.value
-                // only a bare suffix can be the predicate's; with a y buffer it cannot be
-                buffer.isEmpty() && last in predicateConsonant -> m.value
-                last in softenedFinal -> m.value
-                else -> stem
-            }
+        val verb = finalWord.find(translated) ?: return translated
+        val m = politeImperative.matchEntire(verb.value) ?: return translated
+        val stem = m.groupValues[1]
+        val buffer = m.groupValues[2] // the "y" that joins a vowel-final stem
+        val last = stem.lastOrNull()
+        val singular = when {
+            stem.length < MIN_STEM -> return translated
+            // only a bare suffix can be the predicate's; with a y buffer it cannot be
+            buffer.isEmpty() && last in predicateConsonant -> return translated
+            last in softenedFinal -> return translated
+            else -> stem
         }
+        return translated.replaceRange(verb.range, singular)
     }
 
     // fillers that can open an order without being the verb
     private val imperativeFillers = setOf(
         "please", "hey", "oh", "ah", "okay", "ok", "well", "now", "just",
-        "alright", "and", "but", "so", "then", "yeah", "yes", "no", "hmm", "come", "on"
+        "alright", "and", "but", "so", "then", "yeah", "yes", "no", "hmm"
     )
 
-    // a line opening with one of these has a subject or is a question, so it is not an
-    // order. "don't" and "never" are absent on purpose: "Don't move" is an imperative.
-    private val nonImperativeOpeners = setOf(
-        "i", "you", "he", "she", "it", "we", "they", "there", "that", "this", "these", "those",
-        "the", "a", "an", "my", "your", "his", "her", "its", "our", "their",
-        "is", "are", "am", "was", "were", "been", "being", "do", "does", "did",
-        "can", "could", "will", "would", "shall", "should", "may", "might", "must",
-        "have", "has", "had", "let's", "lets",
-        "what", "where", "when", "why", "how", "who", "whom", "which", "whose",
-        "if", "because", "everyone", "everybody", "someone", "somebody", "nobody",
-        "everything", "nothing", "something", "maybe", "perhaps",
-        "i'm", "you're", "he's", "she's", "it's", "we're", "they're",
-        "there's", "that's", "i'll", "you'll", "i've", "you've", "i'd", "you'd"
+    /**
+     * Verbs that open an order.
+     *
+     * A whitelist, not a blacklist. The blacklist this replaced treated every opener
+     * nobody had thought of as an order — "Here is your key", "Ahmet, the phone is
+     * ringing", and, since none of its entries can match a Japanese line, all of them.
+     * Missing a verb here costs one unrepaired line; letting a noun through costs a
+     * mangled word in the delivered file, so the list only grows deliberately.
+     */
+    private val imperativeVerbs = setOf(
+        "don't", "dont", "do", "never", "stop", "wait", "stay", "come", "go", "get",
+        "take", "put", "give", "bring", "send", "show", "tell", "say", "speak", "talk",
+        "ask", "answer", "listen", "look", "watch", "see", "hear", "move", "run", "walk",
+        "sit", "stand", "lie", "hold", "keep", "let", "leave", "drop", "throw", "catch",
+        "call", "help", "hurry", "follow", "turn", "try", "think", "remember", "forget",
+        "shut", "close", "open", "lock", "unlock", "push", "pull", "pick", "check",
+        "find", "read", "write", "eat", "drink", "sleep", "wake", "breathe", "relax",
+        "calm", "focus", "be", "make", "use", "start", "begin", "finish", "continue",
+        "return", "enter", "escape", "hide", "kill", "shoot", "fight", "protect", "save",
+        "trust", "believe", "promise", "swear", "forgive", "explain", "repeat", "choose",
+        "decide", "pay", "buy", "count", "touch", "step", "back", "duck", "jump", "climb",
+        "carry", "lift", "drive", "sign", "wear", "wash", "clean", "cover", "point",
+        "aim", "fire", "reload", "breathe", "smile", "laugh", "cry", "shout", "whisper"
     )
 
-    /** true when [source] reads as an order rather than a statement or a question. */
-    private fun looksImperative(source: String): Boolean {
+    /**
+     * true when [source] reads as an English order.
+     *
+     * Only meaningful for English — the caller checks the language first. A source in
+     * any other script matches nothing here, and "matches nothing" is not evidence that
+     * a line gives an order.
+     */
+    internal fun looksImperative(source: String): Boolean {
         val trimmed = source.trim()
         if (trimmed.isEmpty() || trimmed.endsWith("?")) return false
         // ROOT, not the Turkish locale: lowercasing English "I" in tr gives "ı"
@@ -161,7 +206,7 @@ object GrammarFixer {
             .filter { it.isNotBlank() }
             .map { it.lowercase(Locale.ROOT) }
         val first = tokens.firstOrNull { it !in imperativeFillers } ?: return false
-        return first !in nonImperativeOpeners
+        return first in imperativeVerbs
     }
 
     /** copies the first-letter casing of [original] onto [replacement]. */
