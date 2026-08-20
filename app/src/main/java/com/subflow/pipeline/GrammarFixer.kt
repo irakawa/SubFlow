@@ -97,15 +97,45 @@ object GrammarFixer {
      * question is asked of the whole word instead, and the whole word cannot answer it,
      * so the rule declines.
      */
-    private val ambiguousImperatives = setOf(
-        "sorunuz",    // sor + unuz  /  soru + nuz
-        "yazınız",    // yaz + ınız  /  yazı + nız
-        "görünüz",    // gör + ünüz  /  görü + nüz
-        "gösteriniz", // göster + iniz  /  gösteri + niz
-        "veriniz",    // ver + iniz  /  veri + niz
-        "sürünüz",    // sür + ünüz  /  sürü + nüz
-        "düşünüz"     // düş + ünüz either way: fall, or your dream
+    private val ambiguousImperatives = mapOf(
+        "sorunuz" to "sor",       // sor + unuz  /  soru + nuz
+        "yazınız" to "yaz",       // yaz + ınız  /  yazı + nız
+        "görünüz" to "gör",       // gör + ünüz  /  görü + nüz
+        "gösteriniz" to "göster", // göster + iniz  /  gösteri + niz
+        "veriniz" to "ver",       // ver + iniz  /  veri + niz
+        "sürünüz" to "sür",       // sür + ünüz  /  sürü + nüz
+        "düşünüz" to "düş"        // düş + ünüz either way: fall, or your dream
     )
+
+    /**
+     * English verbs that settle an [ambiguousImperatives] word, by Turkish stem.
+     *
+     * Declining outright was too blunt. The source is already known to be English and
+     * to open with an order; if the verb it opens with is the one whose Turkish stem is
+     * in question, then the verb parse is the one that produced this line and there is
+     * nothing left to guess. "Ask." over "Sorunuz." is an order, whatever "soru" means
+     * on its own. Without that match the rule still declines, so the ambiguity only
+     * resolves in the direction the evidence points.
+     */
+    private val ambiguityResolvers = mapOf(
+        "sor" to setOf("ask"),
+        "yaz" to setOf("write"),
+        "gör" to setOf("see"),
+        "göster" to setOf("show"),
+        "ver" to setOf("give"),
+        "sür" to setOf("drive"),
+        "düş" to setOf("fall")
+    )
+
+    /** true when [source] opens with the English verb that resolves [stem]. */
+    private fun sourceNamesVerb(source: String, stem: String): Boolean {
+        val resolvers = ambiguityResolvers[stem] ?: return false
+        val opener = source.trim().split(Regex("[^\\p{L}']+"))
+            .filter { it.isNotBlank() }
+            .map { it.lowercase(Locale.ROOT) }
+            .firstOrNull { it !in imperativeFillers } ?: return false
+        return opener in resolvers
+    }
 
     /**
      * Turkish verb stems this rule is willing to produce.
@@ -190,8 +220,10 @@ object GrammarFixer {
             buffer.isEmpty() && last in predicateConsonant -> return translated
             last in softenedFinal -> return translated
             // the whole word first: for the collisions it is the only level that can
-            // see both parses, and a word that parses two ways settles nothing
-            verb.value.lowercase(tr) in ambiguousImperatives -> return translated
+            // see both parses. A word that parses two ways settles nothing on its own,
+            // so the source is asked to name the verb before we act on it.
+            ambiguousImperatives[verb.value.lowercase(tr)]
+                ?.let { !sourceNamesVerb(source, it) } == true -> return translated
             // and finally: is what we are about to write even a verb?
             stem.lowercase(tr) !in turkishVerbStems -> return translated
             else -> stem

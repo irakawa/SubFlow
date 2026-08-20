@@ -100,28 +100,46 @@ class ImperativeGuardTest {
     // --- guard 5: the stem list has to answer "is this a verb", not "is this a string" ---
 
     @Test
-    fun `a noun whose stem is spelled like a verb is left alone`() {
+    fun `an ambiguous word with no matching source verb is left alone`() {
         // both parses are real Turkish: "sor|unuz" is an order, "soru|nuz" is your
-        // question. Checking the stem alone only ever sees the first one, so the
-        // decision has to be made on the whole word.
+        // question. The source below orders something, but not this — nothing in it
+        // says which parse the Turkish is, so the rule declines.
         val t = SceneParticipantTracker()
-        assertEquals("Dinleyin. Sorunuz.", fix("Listen. Ask.", "Dinleyin. Sorunuz.", t = t))
-        assertEquals("Çok güzel yazınız.", fix("Write it well.", "Çok güzel yazınız.", t = t))
-        assertEquals("Bulanık görünüz.", fix("Look closer.", "Bulanık görünüz.", t = t))
-        assertEquals("Büyümüş sürünüz.", fix("Keep going.", "Büyümüş sürünüz.", t = t))
-        assertEquals("İlginç gösteriniz.", fix("Show me.", "İlginç gösteriniz.", t = t))
-        assertEquals("Eksik veriniz.", fix("Give it to me.", "Eksik veriniz.", t = t))
-        assertEquals("Güzel düşünüz.", fix("Think about it.", "Güzel düşünüz.", t = t))
+        assertEquals("Bu sizin sorunuz.", fix("Look at this.", "Bu sizin sorunuz.", t = t))
+        assertEquals("Bulanık görünüz.", fix("Wait here.", "Bulanık görünüz.", t = t))
+        assertEquals("Büyümüş sürünüz.", fix("Stop.", "Büyümüş sürünüz.", t = t))
+        assertEquals("İlginç gösteriniz.", fix("Come here.", "İlginç gösteriniz.", t = t))
+        assertEquals("Eksik veriniz.", fix("Listen to me.", "Eksik veriniz.", t = t))
+        assertEquals("Güzel düşünüz.", fix("Wait.", "Güzel düşünüz.", t = t))
+    }
+
+    @Test
+    fun `an ambiguous word the source names as a verb is repaired`() {
+        // the evidence was there all along: the source is English and opens with the
+        // very verb whose Turkish stem is in question, so the verb parse is the one
+        // that produced this line. Refusing these outright cost seven common orders.
+        val t = SceneParticipantTracker()
+        assertEquals("Sor.", fix("Ask.", "Sorunuz.", t = t))
+        assertEquals("Çok güzel yaz.", fix("Write it well.", "Çok güzel yazınız.", t = t))
+        assertEquals("Bana göster.", fix("Show me.", "Bana gösteriniz.", t = t))
+        assertEquals("Bana ver.", fix("Give it to me.", "Bana veriniz.", t = t))
+        assertEquals("Şuna bir gör.", fix("See this.", "Şuna bir görünüz.", t = t))
     }
 
     @Test
     fun `helper-verb nouns never form an imperative on their own`() {
         // "yardım" is a noun; the order is "yardım et". None of these can be the verb,
         // so listing them as stems was risk with nothing on the other side of it.
+        //
+        // All three sources open with a verb that IS on the imperative list, and all
+        // three Turkish stems WERE on the removed list, so putting any of them back
+        // fails this. Two earlier cases proved nothing: "izniniz" yields the stem
+        // "izn" which was never listed, and "Light it." does not open with a listed
+        // verb, so neither could ever have reached the stem check.
         val t = SceneParticipantTracker()
         assertEquals("Acil yardımınız.", fix("Help me.", "Acil yardımınız.", t = t))
-        assertEquals("Sizin izniniz.", fix("Allow it.", "Sizin izniniz.", t = t))
-        assertEquals("Bu sizin ateşiniz.", fix("Light it.", "Bu sizin ateşiniz.", t = t))
+        assertEquals("Bu sizin ateşiniz.", fix("Fire.", "Bu sizin ateşiniz.", t = t))
+        assertEquals("Bu sizin nişanınız.", fix("Aim.", "Bu sizin nişanınız.", t = t))
     }
 
     // --- the fix this rule exists for still works ---
