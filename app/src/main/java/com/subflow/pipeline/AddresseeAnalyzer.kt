@@ -51,7 +51,8 @@ object AddresseeAnalyzer {
             """you(?:'re| are) all|you all are|""" +
             """(?:two|three|four|five|six|seven|eight|nine|ten|all|any|none|some|each|""" +
             """both|several|many|most) of you|""" +
-            """gentlemen|ladies|guys|folks|boys|girls|kids|children|comrades|soldiers)\b""",
+            """gentlemen|ladies|guys|folks|boys|girls|kids|children|comrades|soldiers|""" +
+            """everyone|everybody)\b""",
         RegexOption.IGNORE_CASE
     )
 
@@ -87,22 +88,6 @@ object AddresseeAnalyzer {
         return turkishPluralAddress.any { it.containsMatchIn(lower) }
     }
 
-    /**
-     * "everyone"/"everybody" only counts when it is being spoken *to*, not talked about.
-     *
-     * The word does two jobs. "Everyone, calm down" addresses a crowd; "Everyone left"
-     * is an ordinary subject and says nothing about who the speaker is facing. Treating
-     * both as a group cue put this file at odds with GrammarFixer, which deliberately
-     * keeps "herkes" out of its group words for precisely the second reason — the same
-     * sentence was read two opposite ways depending on which side looked at it.
-     *
-     * A comma is what separates the two in practice: a vocative is always set off by
-     * one, on whichever side it falls.
-     */
-    private val vocativeCrowd = Regex(
-        """(,\s*(everyone|everybody)\b)|(\b(everyone|everybody)\s*,)""",
-        RegexOption.IGNORE_CASE
-    )
 
     /** the formality of the honorific in [text], or null when there's no honorific. */
     fun formalityOf(text: String): Formality? {
@@ -122,8 +107,17 @@ object AddresseeAnalyzer {
         else -> Formality.UNKNOWN // san, senpai depend on context
     }
 
-    fun isGroupAddress(text: String): Boolean =
-        groupAddress.containsMatchIn(text) || vocativeCrowd.containsMatchIn(text)
+    /**
+     * true when [text] addresses more than one person.
+     *
+     * "everyone"/"everybody" count unconditionally. They were briefly gated on a
+     * neighbouring comma, to tell "Everyone, calm down" from "Everyone left" — but
+     * subtitles drop the vocative comma constantly, so "Everyone calm down" read as one
+     * addressee. The gate is not worth it either way: a group reading can only stop a
+     * rewrite, so calling a narrated "everyone" a crowd costs one unrepaired line, while
+     * missing a real one used to corrupt the line instead.
+     */
+    fun isGroupAddress(text: String): Boolean = groupAddress.containsMatchIn(text)
 
     private fun strongest(a: Formality?, b: Formality): Formality = when {
         a == null -> b

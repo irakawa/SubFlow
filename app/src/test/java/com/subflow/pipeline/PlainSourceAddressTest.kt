@@ -63,28 +63,31 @@ class PlainSourceAddressTest {
         assertEquals(Plurality.SINGLE_ASSUMED, t.next("Move.").plurality)
     }
 
-    // --- "everyone" means two different things and only one of them is a group address ---
+    // --- "everyone" is a crowd whether or not the vocative comma survived ---
 
     @Test
-    fun `everyone as a sentence subject is not a group address`() {
-        // GrammarFixer leaves "herkes" alone for exactly this reason; the source side
-        // has to read the word the same way or the two disagree about the same sentence
-        assertFalse(AddresseeAnalyzer.isGroupAddress("Everyone left the building."))
-        assertFalse(AddresseeAnalyzer.isGroupAddress("Is everybody okay?"))
-        assertFalse(AddresseeAnalyzer.isGroupAddress("Everyone knows that."))
-    }
-
-    @Test
-    fun `everyone spoken to a crowd is a group address`() {
+    fun `everyone counts with or without the vocative comma`() {
+        // subtitles drop the vocative comma constantly, and hanging a plural reading on
+        // punctuation meant "Everyone calm down" was read as one addressee
         assertTrue(AddresseeAnalyzer.isGroupAddress("Everyone, calm down."))
+        assertTrue(AddresseeAnalyzer.isGroupAddress("Everyone calm down."))
         assertTrue(AddresseeAnalyzer.isGroupAddress("Listen up, everyone!"))
         assertTrue(AddresseeAnalyzer.isGroupAddress("Calm down, everybody."))
     }
 
     @Test
-    fun `a narrated everyone does not block the next line's fix`() {
+    fun `everyone asked as a question is still a crowd`() {
+        // asked of a room, this is a group address; the old test asserted the opposite
+        assertTrue(AddresseeAnalyzer.isGroupAddress("Is everybody okay?"))
+        assertTrue(AddresseeAnalyzer.isGroupAddress("Everyone knows that."))
+    }
+
+    @Test
+    fun `a group reading only ever costs a repair, never a line`() {
+        // the liberal reading is safe precisely because a group cue can only stop a
+        // rewrite. the line comes through untouched, not mangled.
         val t = SceneParticipantTracker()
         t.next("Everyone left the building.")
-        assertEquals("Yalnızsın", GrammarFixer.fix("Yalnızsınız", t.next("You are alone now.")))
+        assertEquals("Yalnızsınız", GrammarFixer.fix("Yalnızsınız", t.next("You are alone now.")))
     }
 }
