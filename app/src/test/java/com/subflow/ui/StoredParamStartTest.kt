@@ -52,6 +52,24 @@ class StoredParamStartTest {
     }
 
     @Test
+    fun `opening a history entry while busy does nothing at all`() {
+        // it used to clear the picked video first and ask afterwards, so touching
+        // history mid-search lost "open in player" and started nothing in its place
+        var opened = false
+        val ran = openIfFree(busy = true) { opened = true }
+        assertFalse("history entry acted on a run that could not start", opened)
+        assertFalse(ran)
+    }
+
+    @Test
+    fun `opening a history entry when free goes ahead`() {
+        var opened = false
+        val ran = openIfFree(busy = false) { opened = true }
+        assertTrue(opened)
+        assertTrue(ran)
+    }
+
+    @Test
     fun `an outcome other than started is passed straight through`() {
         assertEquals(
             SearchStart.QUEUED_OFFLINE,

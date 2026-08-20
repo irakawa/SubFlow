@@ -295,7 +295,9 @@ fun HomeScreen(
                     SwipeToDeleteCard(
                         entry = entry,
                         onDelete = { viewModel.deleteHistory(entry) },
-                        onOpen = { onOpenHistory(entry) }
+                        onOpen = { onOpenHistory(entry) },
+                        // the last entry point that looked live while refusing
+                        enabled = !searchRunning
                     )
                 }
             }
@@ -418,7 +420,12 @@ private fun LaunchedPressEffect(pressed: Boolean, scale: Animatable<Float, *>) {
 
 /** Swipe-to-delete, springs back below the threshold. */
 @Composable
-private fun SwipeToDeleteCard(entry: HistoryEntry, onDelete: () -> Unit, onOpen: () -> Unit) {
+private fun SwipeToDeleteCard(
+    entry: HistoryEntry,
+    onDelete: () -> Unit,
+    onOpen: () -> Unit,
+    enabled: Boolean = true
+) {
     val offsetX = remember { Animatable(0f) }
     val scope = rememberCoroutineScope()
 
@@ -426,7 +433,7 @@ private fun SwipeToDeleteCard(entry: HistoryEntry, onDelete: () -> Unit, onOpen:
         modifier = Modifier
             .fillMaxWidth()
             .offset { IntOffset(offsetX.value.roundToInt(), 0) }
-            .clickable { onOpen() }
+            .clickable(enabled = enabled) { onOpen() }
             .pointerInput(entry.id) {
                 detectHorizontalDragGestures(
                     onDragEnd = {

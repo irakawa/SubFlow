@@ -560,18 +560,27 @@ class SearchViewModel(app: Application) : AndroidViewModel(app) {
     // opens a history entry. if the saved results are still on disk they load off the
     // main thread and show the result screen, otherwise the search is re-run.
     fun openHistory(entry: HistoryEntry) {
-        _pickedVideoUri.value = null // history is unrelated to any picked video
-        // rerun only goes to progress if a search actually started (offline gets queued)
-        if (entry.resultCount <= 0) { if (rerunHistory(entry).opensProgress) _historyNav.value = "progress"; return }
-        viewModelScope.launch {
-            val saved = withContext(Dispatchers.IO) {
-                ResultStore.load(getApplication(), entry.id)
+        // nothing in here can happen while a run is in flight — a re-run is refused and
+        // showPersisted returns early — so the question comes before the first side
+        // effect rather than after it. Clearing the picked video first meant touching
+        // history mid-search cost the user "open in player" and started nothing.
+        openIfFree(isBusy()) {
+            _pickedVideoUri.value = null // history is unrelated to any picked video
+            // rerun only goes to progress if a search actually started (offline queues)
+            if (entry.resultCount <= 0) {
+                if (rerunHistory(entry).opensProgress) _historyNav.value = "progress"
+                return@openIfFree
             }
-            if (saved != null) {
-                PipelineRunner.showPersisted(saved)
-                _historyNav.value = "result"
-            } else if (rerunHistory(entry).opensProgress) {
-                _historyNav.value = "progress"
+            viewModelScope.launch {
+                val saved = withContext(Dispatchers.IO) {
+                    ResultStore.load(getApplication(), entry.id)
+                }
+                if (saved != null) {
+                    PipelineRunner.showPersisted(saved)
+                    _historyNav.value = "result"
+                } else if (rerunHistory(entry).opensProgress) {
+                    _historyNav.value = "progress"
+                }
             }
         }
     }
@@ -676,4 +685,18 @@ internal fun queueOutcome(
     else -> startOutcome(online = true, start = start).also {
         if (it == SearchStart.STARTED) clear()
     }
+}
+
+/**
+ * Runs [open] only when nothing is in flight.
+ *
+ * The point is the ordering: every side effect lives inside the lambda, so none of
+ * them can happen on a path that turns out to be refused.
+ *
+ * @return whether [open] ran.
+ */
+internal fun openIfFree(busy: Boolean, open: () -> Unit): Boolean {
+    if (busy) return false
+    open()
+    return true
 }
