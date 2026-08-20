@@ -101,6 +101,8 @@ fun HomeScreen(
     val hasLastRelease by viewModel.hasLastRelease.collectAsState()
     val continueHint by viewModel.continueWatching.collectAsState()
     val queueSize by viewModel.queueSize.collectAsState()
+    val pipelineStatus by viewModel.pipelineStatus.collectAsState()
+    val searchRunning = pipelineStatus == com.subflow.models.PipelineStatus.RUNNING
     val update by viewModel.update.collectAsState()
     val updateDownloading by viewModel.updateDownloading.collectAsState()
     androidx.compose.runtime.LaunchedEffect(Unit) { viewModel.checkForUpdate() }
@@ -202,7 +204,7 @@ fun HomeScreen(
                     color = SubFlowColors.TextSecondary,
                     modifier = Modifier.weight(1f)
                 )
-                TextButton(onClick = onRunQueue) {
+                TextButton(onClick = onRunQueue, enabled = !searchRunning) {
                     Text(stringResource(R.string.queue_run), color = SubFlowColors.Accent)
                 }
                 TextButton(onClick = { viewModel.clearQueue() }) {
@@ -215,7 +217,14 @@ fun HomeScreen(
         PressableButton(text = stringResource(R.string.new_search), onClick = onNewSearch)
         if (hasLastRelease) {
             Spacer(Modifier.height(12.dp))
-            PressableButton(text = stringResource(R.string.retry_last), onClick = onRetryLast, outline = true)
+            // every entry point has to show the same refusal, or the user just finds a
+            // different button that pretends to work
+            PressableButton(
+                text = stringResource(R.string.retry_last),
+                onClick = onRetryLast,
+                outline = true,
+                enabled = !searchRunning
+            )
         }
 
         // jump to the next episode of the last show
@@ -227,7 +236,9 @@ fun HomeScreen(
                     .clip(RoundedCornerShape(12.dp))
                     .background(SubFlowColors.Accent.copy(alpha = 0.10f))
                     .border(1.dp, SubFlowColors.Accent.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
-                    .clickable { if (viewModel.searchContinue(hint).opensProgress) onContinue() }
+                    .clickable(enabled = !searchRunning) {
+                        if (viewModel.searchContinue(hint).opensProgress) onContinue()
+                    }
                     .padding(14.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {

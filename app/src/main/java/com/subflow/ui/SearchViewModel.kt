@@ -419,6 +419,9 @@ class SearchViewModel(app: Application) : AndroidViewModel(app) {
         .map { it != null }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
+    /** true while a run is in flight, so every entry point can refuse before it acts. */
+    fun isBusy(): Boolean = PipelineRunner.status.value == com.subflow.models.PipelineStatus.RUNNING
+
     fun cancelPipeline() = PipelineRunner.cancel()
 
     fun answerWhisperConsent(allow: Boolean) = PipelineRunner.answerWhisperConsent(allow)
@@ -455,19 +458,20 @@ class SearchViewModel(app: Application) : AndroidViewModel(app) {
     fun searchContinue(hint: ContinueHint): SearchStart {
         val j = runCatching { JSONObject(hint.params) }.getOrNull() ?: return SearchStart.NOTHING_TO_RUN
         val lastEp = if (j.optBoolean("seasonMode", false)) j.optInt("episodeEnd", 0) else j.optInt("episode", 0)
-        _pickedVideoUri.value = null // different show than any picked video
-        _form.value = InputForm(
-            title = j.optString("title"),
-            season = j.optInt("season", 0).let { if (it > 0) it.toString() else "" },
-            episode = (lastEp + 1).toString(),
-            type = runCatching { ContentType.valueOf(j.optString("type")) }.getOrDefault(ContentType.SERIES),
-            format = j.optString("format"),
-            codec = j.optString("codec"),
-            audio = j.optString("audio"),
-            extraTags = j.optString("tags"),
-            targetLang = j.optString("targetLang", "tr")
-        )
-        return startPipeline()
+        return startFromStoredParams(busy = isBusy(), applyForm = {
+            _pickedVideoUri.value = null // different show than any picked video
+            _form.value = InputForm(
+                title = j.optString("title"),
+                season = j.optInt("season", 0).let { if (it > 0) it.toString() else "" },
+                episode = (lastEp + 1).toString(),
+                type = runCatching { ContentType.valueOf(j.optString("type")) }.getOrDefault(ContentType.SERIES),
+                format = j.optString("format"),
+                codec = j.optString("codec"),
+                audio = j.optString("audio"),
+                extraTags = j.optString("tags"),
+                targetLang = j.optString("targetLang", "tr")
+            )
+        }, start = ::startPipeline)
     }
 
     // favorites / watchlist
@@ -513,13 +517,14 @@ class SearchViewModel(app: Application) : AndroidViewModel(app) {
     // skip a not-yet-available episode.
     fun searchNextEpisode(fav: FavoriteEntry): SearchStart {
         val next = fav.lastEpisode + 1
-        _pickedVideoUri.value = null // followed show, not the picked video
-        _form.value = InputForm(
-            title = fav.title, season = fav.season.toString(), episode = next.toString(),
-            type = runCatching { ContentType.valueOf(fav.type) }.getOrDefault(ContentType.SERIES),
-            format = fav.format, codec = fav.codec, audio = fav.audio, targetLang = fav.targetLang
-        )
-        return startPipeline()
+        return startFromStoredParams(busy = isBusy(), applyForm = {
+            _pickedVideoUri.value = null // followed show, not the picked video
+            _form.value = InputForm(
+                title = fav.title, season = fav.season.toString(), episode = next.toString(),
+                type = runCatching { ContentType.valueOf(fav.type) }.getOrDefault(ContentType.SERIES),
+                format = fav.format, codec = fav.codec, audio = fav.audio, targetLang = fav.targetLang
+            )
+        }, start = ::startPipeline)
     }
 
     // one-shot nav target after a history entry is opened
@@ -564,21 +569,22 @@ class SearchViewModel(app: Application) : AndroidViewModel(app) {
     private fun rerunHistory(entry: HistoryEntry): SearchStart {
         val j = runCatching { JSONObject(entry.params) }.getOrNull() ?: return SearchStart.NOTHING_TO_RUN
         fun posInt(key: String) = j.optInt(key, 0).let { if (it > 0) it.toString() else "" }
-        _form.value = InputForm(
-            title = j.optString("title"),
-            season = posInt("season"),
-            episode = posInt("episode"),
-            seasonMode = j.optBoolean("seasonMode", false),
-            episodeEnd = posInt("episodeEnd"),
-            type = runCatching { ContentType.valueOf(j.optString("type")) }.getOrDefault(ContentType.SERIES),
-            format = j.optString("format"),
-            codec = j.optString("codec"),
-            audio = j.optString("audio"),
-            extraTags = j.optString("tags"),
-            httpUrl = j.optString("httpUrl"),
-            targetLang = j.optString("targetLang", "tr")
-        )
-        return startPipeline()
+        return startFromStoredParams(busy = isBusy(), applyForm = {
+            _form.value = InputForm(
+                title = j.optString("title"),
+                season = posInt("season"),
+                episode = posInt("episode"),
+                seasonMode = j.optBoolean("seasonMode", false),
+                episodeEnd = posInt("episodeEnd"),
+                type = runCatching { ContentType.valueOf(j.optString("type")) }.getOrDefault(ContentType.SERIES),
+                format = j.optString("format"),
+                codec = j.optString("codec"),
+                audio = j.optString("audio"),
+                extraTags = j.optString("tags"),
+                httpUrl = j.optString("httpUrl"),
+                targetLang = j.optString("targetLang", "tr")
+            )
+        }, start = ::startPipeline)
     }
 
     fun saveResultTo(uri: Uri, result: SubtitleResult): Boolean =
@@ -621,4 +627,22 @@ internal fun startOutcome(online: Boolean, start: () -> Boolean): SearchStart = 
     !online -> SearchStart.QUEUED_OFFLINE
     start() -> SearchStart.STARTED
     else -> SearchStart.REFUSED_BUSY
+}
+
+/**
+ * Runs a search built from stored parameters, but only once it is clear one can run.
+ *
+ * The order is the whole point. These entry points overwrite the input form and drop
+ * the picked video before starting, so doing that first and asking afterwards meant a
+ * refused search still wiped whatever the user had typed — a refusal that costs
+ * something is not a refusal, it is a silent failure with a side effect.
+ */
+internal fun startFromStoredParams(
+    busy: Boolean,
+    applyForm: () -> Unit,
+    start: () -> SearchStart
+): SearchStart {
+    if (busy) return SearchStart.REFUSED_BUSY
+    applyForm()
+    return start()
 }

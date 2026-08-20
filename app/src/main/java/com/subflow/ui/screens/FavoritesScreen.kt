@@ -41,6 +41,8 @@ import com.subflow.ui.theme.SubFlowColors
 @Composable
 fun FavoritesScreen(viewModel: SearchViewModel, onBack: () -> Unit, onSearchStarted: () -> Unit) {
     val favorites by viewModel.favorites.collectAsState()
+    val pipelineStatus by viewModel.pipelineStatus.collectAsState()
+    val searchRunning = pipelineStatus == com.subflow.models.PipelineStatus.RUNNING
 
     Column(
         modifier = Modifier
@@ -73,7 +75,8 @@ fun FavoritesScreen(viewModel: SearchViewModel, onBack: () -> Unit, onSearchStar
                     FavoriteRow(
                         fav = fav,
                         onNext = { if (viewModel.searchNextEpisode(fav).opensProgress) onSearchStarted() },
-                        onRemove = { viewModel.unfollow(fav) }
+                        onRemove = { viewModel.unfollow(fav) },
+                        enabled = !searchRunning
                     )
                 }
             }
@@ -82,7 +85,12 @@ fun FavoritesScreen(viewModel: SearchViewModel, onBack: () -> Unit, onSearchStar
 }
 
 @Composable
-private fun FavoriteRow(fav: FavoriteEntry, onNext: () -> Unit, onRemove: () -> Unit) {
+private fun FavoriteRow(
+    fav: FavoriteEntry,
+    onNext: () -> Unit,
+    onRemove: () -> Unit,
+    enabled: Boolean = true
+) {
     Column(
         Modifier
             .fillMaxWidth()
@@ -99,7 +107,7 @@ private fun FavoriteRow(fav: FavoriteEntry, onNext: () -> Unit, onRemove: () -> 
         )
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-            TextButton(onClick = onNext) {
+            TextButton(onClick = onNext, enabled = enabled) {
                 Text(
                     "▶ " + stringResource(R.string.favorite_next) +
                         " · E%02d".format(java.util.Locale.ROOT, fav.lastEpisode + 1),
