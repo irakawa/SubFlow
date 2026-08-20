@@ -167,6 +167,7 @@
     <string name="notif_source">المصدر %1$d / %2$d</string>
     <string name="no_internet">لا يوجد اتصال بالإنترنت — اتصل وحاول مجددًا</string>
     <string name="title_required">أدخل عنوانًا أولًا</string>
+    <string name="search_already_running">هناك بحث قيد التشغيل بالفعل. انتظر انتهاءه أو ألغِه أولًا.</string>
     <string name="empty_history_title">لا عمليات بحث بعد</string>
     <string name="empty_history_body">اضغط بحث جديد أو شارك ملف فيديو مع SubFlow.</string>
     <string name="crash_log">سجل آخر انهيار</string>

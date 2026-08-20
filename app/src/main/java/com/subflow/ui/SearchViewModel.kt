@@ -383,8 +383,9 @@ class SearchViewModel(app: Application) : AndroidViewModel(app) {
             return false
         }
         PipelineRunner.reset()
-        PipelineRunner.start(getApplication(), buildReleases())
-        return true
+        // report what actually happened: a run already in flight is refused, and saying
+        // "started" would send the user to watch someone else's search finish
+        return PipelineRunner.start(getApplication(), buildReleases())
     }
 
     // runs every queued search as one batch. false if still offline or empty, in which
@@ -397,8 +398,7 @@ class SearchViewModel(app: Application) : AndroidViewModel(app) {
         if (releases.isEmpty()) { SearchQueue.clear(); return false }
         SearchQueue.clear() // safe, confirmed online above
         PipelineRunner.reset()
-        PipelineRunner.start(getApplication(), releases)
-        return true
+        return PipelineRunner.start(getApplication(), releases)
     }
 
     fun clearQueue() = SearchQueue.clear()

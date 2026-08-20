@@ -83,6 +83,9 @@ fun ReleaseInputScreen(viewModel: SearchViewModel, onStart: () -> Unit, onBack: 
     val ocrBusy by viewModel.ocrBusy.collectAsState()
     val episodePicker by viewModel.episodePicker.collectAsState()
     val suggestions by viewModel.suggestions.collectAsState()
+    // a run already in flight would refuse this one; say so instead of pretending
+    val searchRunning by viewModel.pipelineStatus.collectAsState()
+    val busySearching = searchRunning == com.subflow.models.PipelineStatus.RUNNING
     val clipboard = LocalClipboardManager.current
 
     // stagger the field reveal after a parse
@@ -359,10 +362,24 @@ fun ReleaseInputScreen(viewModel: SearchViewModel, onStart: () -> Unit, onBack: 
             )
             Spacer(Modifier.height(8.dp))
         }
+        if (busySearching) {
+            Text(
+                stringResource(R.string.search_already_running),
+                style = MaterialTheme.typography.labelSmall,
+                color = SubFlowColors.Accent,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+            Spacer(Modifier.height(8.dp))
+        }
         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-            PressableButton(text = stringResource(R.string.start), onClick = {
-                if (form.title.isNotBlank()) onStart() else showTitleError = true
-            })
+            PressableButton(
+                text = stringResource(R.string.start),
+                enabled = !busySearching,
+                onClick = {
+                    if (form.title.isNotBlank()) onStart() else showTitleError = true
+                }
+            )
         }
         Spacer(Modifier.height(32.dp))
     }

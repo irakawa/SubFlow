@@ -167,6 +167,7 @@
     <string name="notif_source">Kaynak %1$d / %2$d</string>
     <string name="no_internet">İnternet bağlantısı yok — bağlanıp tekrar deneyin</string>
     <string name="title_required">Önce bir başlık girin</string>
+    <string name="search_already_running">Zaten süren bir arama var. Bitmesini bekle ya da önce onu iptal et.</string>
     <string name="empty_history_title">Henüz arama yok</string>
     <string name="empty_history_body">Yeni Arama\'ya dokun ya da bir video dosyasını SubFlow\'a paylaş.</string>
     <string name="crash_log">Son çökme kaydı</string>

@@ -167,6 +167,7 @@
     <string name="notif_source">Quelle %1$d / %2$d</string>
     <string name="no_internet">Keine Internetverbindung — verbinden und erneut versuchen</string>
     <string name="title_required">Zuerst einen Titel eingeben</string>
+    <string name="search_already_running">Es läuft bereits eine Suche. Warte, bis sie fertig ist, oder brich sie zuerst ab.</string>
     <string name="empty_history_title">Noch keine Suchen</string>
     <string name="empty_history_body">Tippe auf Neue Suche oder teile eine Videodatei mit SubFlow.</string>
     <string name="crash_log">Letztes Absturzprotokoll</string>

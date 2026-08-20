@@ -173,6 +173,7 @@
     <string name="notif_source">Source %1$d / %2$d</string>
     <string name="no_internet">No internet connection — connect and try again</string>
     <string name="title_required">Enter a title first</string>
+    <string name="search_already_running">A search is already running. Wait for it to finish or cancel it first.</string>
     <string name="empty_history_title">No searches yet</string>
     <string name="empty_history_body">Tap New Search, or share a video file into SubFlow.</string>
     <string name="crash_log">Last crash log</string>

@@ -370,7 +370,7 @@ private fun WhatsNewDialog(onDismiss: () -> Unit) {
 
 /** Press feedback: dips to 0.96 then springs back, plus a haptic tick. */
 @Composable
-fun PressableButton(text: String, onClick: () -> Unit, outline: Boolean = false) {
+fun PressableButton(text: String, onClick: () -> Unit, outline: Boolean = false, enabled: Boolean = true) {
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
     val scale = remember { Animatable(1f) }
@@ -379,6 +379,7 @@ fun PressableButton(text: String, onClick: () -> Unit, outline: Boolean = false)
 
     Button(
         onClick = { Haptics.tick(view); onClick() },
+        enabled = enabled,
         interactionSource = interaction,
         shape = RoundedCornerShape(50), // pill
         colors = if (outline) ButtonDefaults.outlinedButtonColors(contentColor = SubFlowColors.Accent)

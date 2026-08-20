@@ -140,8 +140,20 @@ object PipelineRunner {
         }
     }
 
+    /**
+     * Whether a new run may be taken on right now.
+     *
+     * One place, because both the guard and the caller have to agree on it: a refusal
+     * that only the guard knows about is how a second search used to vanish while the
+     * UI reported it started.
+     */
+    internal fun accepts(status: PipelineStatus, releaseCount: Int): Boolean =
+        status != PipelineStatus.RUNNING && releaseCount > 0
+
+    /** @return false when the run was refused and nothing was started. */
     fun start(context: Context, release: Release) = start(context, listOf(release))
 
+    /** @return false when the run was refused and nothing was started. */
     fun start(context: Context, releases: List<Release>) =
         launch(context, releases, fullBatch = releases, keepResults = false, writeHist = true)
 
@@ -150,8 +162,7 @@ object PipelineRunner {
         if (_status.value == PipelineStatus.RUNNING) return false
         val failed = failedReleases()
         if (failed.isEmpty()) return false
-        launch(context, failed, fullBatch = lastBatch, keepResults = true, writeHist = false)
-        return true
+        return launch(context, failed, fullBatch = lastBatch, keepResults = true, writeHist = false)
     }
 
     /** Releases from the last batch not covered by any result. */
@@ -161,14 +172,15 @@ object PipelineRunner {
         return lastBatch.filter { it.displayName() !in covered }
     }
 
+    /** @return false when [accepts] refused; nothing is touched in that case. */
     private fun launch(
         context: Context,
         releases: List<Release>,
         fullBatch: List<Release>,
         keepResults: Boolean,
         writeHist: Boolean
-    ) {
-        if (_status.value == PipelineStatus.RUNNING || releases.isEmpty()) return
+    ): Boolean {
+        if (!accepts(_status.value, releases.size)) return false
         val appContext = context.applicationContext
 
         // fail fast when offline instead of letting 15 sources time out one by one
@@ -180,7 +192,7 @@ object PipelineRunner {
                 log(LogLevel.ERROR, L10n.t(R.string.no_internet))
                 _status.value = PipelineStatus.FAILED
             }
-            return
+            return true // a run happened; it failed loudly instead of being refused
         }
 
         lastBatch = fullBatch
@@ -248,13 +260,13 @@ object PipelineRunner {
                 } catch (e: Exception) { /* ignore */ }
             }
         }
+        return true
     }
 
     fun retryLastBatch(context: Context): Boolean {
         if (lastBatch.isEmpty()) return false
         reset()
-        start(context, lastBatch)
-        return true
+        return start(context, lastBatch)
     }
 
     private suspend fun writeHistory(context: Context, releases: List<Release>) {
