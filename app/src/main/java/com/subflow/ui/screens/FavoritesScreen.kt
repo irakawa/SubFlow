@@ -72,7 +72,7 @@ fun FavoritesScreen(viewModel: SearchViewModel, onBack: () -> Unit, onSearchStar
                 items(favorites, key = { it.title }) { fav ->
                     FavoriteRow(
                         fav = fav,
-                        onNext = { if (viewModel.searchNextEpisode(fav)) onSearchStarted() },
+                        onNext = { if (viewModel.searchNextEpisode(fav).opensProgress) onSearchStarted() },
                         onRemove = { viewModel.unfollow(fav) }
                     )
                 }

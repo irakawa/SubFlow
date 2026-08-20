@@ -35,13 +35,16 @@ class ImperativeAddressTest {
     // --- what it must refuse to touch ---
 
     @Test
-    fun `a possessive noun is never mistaken for an imperative`() {
-        // "-ınız" is also the second-person-plural possessive: kitabınız = your book.
-        // the source is what tells them apart, and neither of these orders anyone about.
+    fun `a possessive noun in predicate position is still not a verb`() {
+        // nothing else stops these. The source is a genuine order, says nothing about
+        // ownership, is English, and the noun sits exactly where the verb would: all four
+        // guards pass and only the word itself can settle it. "oğl" and "burn" are not
+        // Turkish verb stems and must never be produced.
+        // (the doubly-guarded "your book" cases live in ImperativeGuardTest, one guard
+        // each, since a case two guards cover proves nothing about either)
         val t = SceneParticipantTracker()
-        assertEquals("Kitabınız burada.", fix("Your book is here.", "Kitabınız burada.", t))
-        assertEquals("Eviniz nerede?", fix("Where is your house?", "Eviniz nerede?", t))
-        assertEquals("Gözünüz kanıyor.", fix("Your eye is bleeding.", "Gözünüz kanıyor.", t))
+        assertEquals("Bak, oğlunuz.", fix("See the boy.", "Bak, oğlunuz.", t))
+        assertEquals("Kesin şu burnunuz.", fix("Stop that.", "Kesin şu burnunuz.", t))
     }
 
     @Test

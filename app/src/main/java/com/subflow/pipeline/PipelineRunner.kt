@@ -659,7 +659,7 @@ object PipelineRunner {
                 } else {
                     log(LogLevel.INFO, L10n.t(R.string.log_vad_consistent, confPct))
                 }
-                results[i] = withVadObservation(results[i], confPct)
+                results[i] = withVadObservation(results[i], aligned)
             }
         } finally {
             wav.delete()
@@ -690,10 +690,17 @@ object PipelineRunner {
      * The score nudge stays. It is bounded to +1..+10 and [Quality.episodeAwareSync]
      * already refuses to lift a result whose episode nothing confirmed.
      */
-    internal fun withVadObservation(result: SubtitleResult, confPct: Int): SubtitleResult =
-        result.copy(
+    internal fun withVadObservation(result: SubtitleResult, aligned: VadSync.SyncResult): SubtitleResult {
+        val confPct = (aligned.confidence * 100).toInt()
+        // [aligned] carries the offset and the scale on purpose. Taking only a number
+        // would leave this function unable to apply them, which reads as safe and is
+        // not: the application would simply move back to the caller, out from under the
+        // test that checks no timestamp moved. Everything a reading could do has to be
+        // reachable from here, so that refusing to do it is what the test observes.
+        return result.copy(
             qualityScore = Quality.episodeAwareSync(result.qualityScore, confPct, result.episodeVerified)
         )
+    }
 
     /** whisper flow: if the model is missing, ask consent, download, then transcribe. */
     private suspend fun whisperPath(context: Context, release: Release): String? {

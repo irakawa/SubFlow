@@ -20,6 +20,9 @@ import org.junit.Test
  */
 class VadObservationTest {
 
+    /** a reading that would visibly move every cue if it were ever applied */
+    private val aligned = VadSync.SyncResult(offsetMs = 5000, scaleFactor = 1.0427, confidence = 0.92)
+
     private fun result(
         warning: String? = "tags mismatch, verify",
         score: Int = Quality.HUMAN,
@@ -37,29 +40,40 @@ class VadObservationTest {
     )
 
     @Test
-    fun `an observation never rewrites the timings`() {
+    fun `an observation never moves a single timestamp`() {
+        // the reading carries a 5s offset and a 4% stretch, so if anything ever applies
+        // it the parsed cue times move and this fails. Asserting on the parsed times
+        // rather than the raw string is the point: the reading has to be handed in here,
+        // so there is nowhere else the application could be reintroduced unnoticed.
         val before = result()
-        val after = PipelineRunner.withVadObservation(before, confPct = 92)
-        assertEquals(before.content, after.content)
+        val after = PipelineRunner.withVadObservation(before, aligned)
+        val a = SyncEngine.parseSrt(before.content)
+        val b = SyncEngine.parseSrt(after.content)
+        assertEquals(a.size, b.size)
+        a.zip(b).forEach { (x, y) ->
+            assertEquals(x.startMs, y.startMs)
+            assertEquals(x.endMs, y.endMs)
+            assertEquals(x.text, y.text)
+        }
     }
 
     @Test
     fun `an observation never retracts the sync warning`() {
         val before = result(warning = "Release tags mismatch — verify")
-        val after = PipelineRunner.withVadObservation(before, confPct = 92)
+        val after = PipelineRunner.withVadObservation(before, aligned)
         assertNotNull(after.syncWarning)
         assertEquals(before.syncWarning, after.syncWarning)
     }
 
     @Test
     fun `a result that had no warning still has none`() {
-        val after = PipelineRunner.withVadObservation(result(warning = null), confPct = 60)
+        val after = PipelineRunner.withVadObservation(result(warning = null), aligned)
         assertEquals(null, after.syncWarning)
     }
 
     @Test
     fun `the bounded score nudge survives`() {
-        val after = PipelineRunner.withVadObservation(result(score = Quality.HUMAN), confPct = 100)
+        val after = PipelineRunner.withVadObservation(result(score = Quality.HUMAN), aligned.copy(confidence = 1.0))
         assertEquals(Quality.withSync(Quality.HUMAN, 100), after.qualityScore)
         assertTrue(after.qualityScore > Quality.HUMAN)
     }
@@ -67,7 +81,7 @@ class VadObservationTest {
     @Test
     fun `an unconfirmed episode is still not lifted`() {
         val before = result(score = Quality.UNVERIFIED_EPISODE, episodeVerified = false)
-        val after = PipelineRunner.withVadObservation(before, confPct = 100)
+        val after = PipelineRunner.withVadObservation(before, aligned.copy(confidence = 1.0))
         assertEquals(Quality.UNVERIFIED_EPISODE, after.qualityScore)
     }
 }

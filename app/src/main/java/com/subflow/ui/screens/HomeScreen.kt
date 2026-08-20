@@ -227,7 +227,7 @@ fun HomeScreen(
                     .clip(RoundedCornerShape(12.dp))
                     .background(SubFlowColors.Accent.copy(alpha = 0.10f))
                     .border(1.dp, SubFlowColors.Accent.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
-                    .clickable { if (viewModel.searchContinue(hint)) onContinue() }
+                    .clickable { if (viewModel.searchContinue(hint).opensProgress) onContinue() }
                     .padding(14.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {

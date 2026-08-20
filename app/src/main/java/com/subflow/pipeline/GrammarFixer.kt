@@ -111,6 +111,32 @@ object GrammarFixer {
     /** below this a stem is more likely an irregular remnant ("yiyiniz" -> "yi", stem "ye"). */
     private const val MIN_STEM = 3
 
+    /**
+     * Turkish verb stems this rule is willing to produce.
+     *
+     * The last guess left. Everything else about the word can look right — an English
+     * order in the source, no possessive, the word in predicate position — and it can
+     * still be a noun: "See the boy." over "Bak, oğlunuz." passes all of that, and
+     * cutting it yields "oğl", which is not a word. The morphology cannot tell; only
+     * knowing the stem can. So the rule produces a stem or it produces nothing, on the
+     * same principle as the English verb list: an unlisted verb costs one unrepaired
+     * line, an unlisted noun used to cost a mangled one.
+     */
+    private val turkishVerbStems = setOf(
+        "kal", "gel", "git", "bak", "dur", "otur", "bekle", "dinle", "izle", "konuş",
+        "söyle", "anlat", "sor", "cevapla", "ver", "al", "gör", "yap", "et", "kaç",
+        "koş", "yürü", "bin", "in", "çık", "gir", "aç", "kapa", "kapat", "unut",
+        "hatırla", "dene", "başla", "bitir", "bırak", "tut", "çek", "it", "koy",
+        "getir", "götür", "gönder", "oku", "yaz", "ye", "iç", "uyu", "uyan", "kalk",
+        "dön", "düş", "atla", "sar", "sil", "temizle", "hazırla", "düşün", "inan",
+        "güven", "affet", "açıkla", "tekrarla", "seç", "öde", "say", "dokun", "eğil",
+        "tırman", "taşı", "kaldır", "sür", "imzala", "giy", "yıka", "örtün", "göster",
+        "ateş", "nişan", "sakin", "rahatla", "acele", "yardım", "devam", "dikkat",
+        "izin", "buyur", "gel", "geç", "kork", "sus", "bağır", "fısılda", "gül",
+        "ağla", "otur", "yat", "kaybol", "defol", "sakla", "koru", "kurtar", "öldür",
+        "vur", "savaş", "dövüş", "yakala", "bul", "ara", "topla", "böl", "kes"
+    )
+
     /** source languages whose grammar [looksImperative] actually knows. */
     private val englishTags = setOf("en", "eng", "english")
 
@@ -165,6 +191,8 @@ object GrammarFixer {
             // only a bare suffix can be the predicate's; with a y buffer it cannot be
             buffer.isEmpty() && last in predicateConsonant -> return translated
             last in softenedFinal -> return translated
+            // and finally: is what we are about to write even a verb?
+            stem.lowercase(tr) !in turkishVerbStems -> return translated
             else -> stem
         }
         return translated.replaceRange(verb.range, singular)

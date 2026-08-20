@@ -374,18 +374,17 @@ class SearchViewModel(app: Application) : AndroidViewModel(app) {
         .map { it.size }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SearchQueue.size)
 
-    // true if the pipeline started, false if it was queued (offline)
-    fun startPipeline(): Boolean {
+    fun startPipeline(): SearchStart {
         // offline, queue instead of letting every source time out
         if (!ConnectivityWatcher.isOnline(getApplication())) {
             SearchQueue.enqueue(_form.value)
             _justQueued.value = true
-            return false
+            return SearchStart.QUEUED_OFFLINE
         }
         PipelineRunner.reset()
-        // report what actually happened: a run already in flight is refused, and saying
-        // "started" would send the user to watch someone else's search finish
-        return PipelineRunner.start(getApplication(), buildReleases())
+        return startOutcome(online = true) {
+            PipelineRunner.start(getApplication(), buildReleases())
+        }
     }
 
     // runs every queued search as one batch. false if still offline or empty, in which
@@ -400,6 +399,8 @@ class SearchViewModel(app: Application) : AndroidViewModel(app) {
         PipelineRunner.reset()
         return PipelineRunner.start(getApplication(), releases)
     }
+
+
 
     fun clearQueue() = SearchQueue.clear()
 
@@ -451,8 +452,8 @@ class SearchViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     // searches the next episode behind a continue-watching hint
-    fun searchContinue(hint: ContinueHint): Boolean {
-        val j = runCatching { JSONObject(hint.params) }.getOrNull() ?: return false
+    fun searchContinue(hint: ContinueHint): SearchStart {
+        val j = runCatching { JSONObject(hint.params) }.getOrNull() ?: return SearchStart.NOTHING_TO_RUN
         val lastEp = if (j.optBoolean("seasonMode", false)) j.optInt("episodeEnd", 0) else j.optInt("episode", 0)
         _pickedVideoUri.value = null // different show than any picked video
         _form.value = InputForm(
@@ -510,7 +511,7 @@ class SearchViewModel(app: Application) : AndroidViewModel(app) {
     // searches the episode after the last reached for a followed show. the favorite's
     // pointer isn't advanced here, the pipeline does that only on a hit so we never
     // skip a not-yet-available episode.
-    fun searchNextEpisode(fav: FavoriteEntry): Boolean {
+    fun searchNextEpisode(fav: FavoriteEntry): SearchStart {
         val next = fav.lastEpisode + 1
         _pickedVideoUri.value = null // followed show, not the picked video
         _form.value = InputForm(
@@ -546,7 +547,7 @@ class SearchViewModel(app: Application) : AndroidViewModel(app) {
     fun openHistory(entry: HistoryEntry) {
         _pickedVideoUri.value = null // history is unrelated to any picked video
         // rerun only goes to progress if a search actually started (offline gets queued)
-        if (entry.resultCount <= 0) { if (rerunHistory(entry)) _historyNav.value = "progress"; return }
+        if (entry.resultCount <= 0) { if (rerunHistory(entry).opensProgress) _historyNav.value = "progress"; return }
         viewModelScope.launch {
             val saved = withContext(Dispatchers.IO) {
                 ResultStore.load(getApplication(), entry.id)
@@ -554,14 +555,14 @@ class SearchViewModel(app: Application) : AndroidViewModel(app) {
             if (saved != null) {
                 PipelineRunner.showPersisted(saved)
                 _historyNav.value = "result"
-            } else if (rerunHistory(entry)) {
+            } else if (rerunHistory(entry).opensProgress) {
                 _historyNav.value = "progress"
             }
         }
     }
 
-    private fun rerunHistory(entry: HistoryEntry): Boolean {
-        val j = runCatching { JSONObject(entry.params) }.getOrNull() ?: return false
+    private fun rerunHistory(entry: HistoryEntry): SearchStart {
+        val j = runCatching { JSONObject(entry.params) }.getOrNull() ?: return SearchStart.NOTHING_TO_RUN
         fun posInt(key: String) = j.optInt(key, 0).let { if (it > 0) it.toString() else "" }
         _form.value = InputForm(
             title = j.optString("title"),
@@ -590,4 +591,34 @@ class SearchViewModel(app: Application) : AndroidViewModel(app) {
     // http source for the preview player, if any
     val lastHttpUrl: String?
         get() = PipelineRunner.lastRelease.value?.httpUrl
+}
+
+/**
+ * What came of a start attempt.
+ *
+ * A boolean could not say this. "false" meant both "queued because you are offline" and
+ * "refused because a search is already running", and the second one used to not be
+ * expressible at all — startPipeline() returned a constant true and the UI opened the
+ * progress screen on a run that had never started.
+ */
+enum class SearchStart {
+    STARTED,
+    QUEUED_OFFLINE,
+    REFUSED_BUSY,
+
+    /** the stored parameters would not parse, so there was no search to attempt. */
+    NOTHING_TO_RUN;
+
+    /** only a run that actually began has a progress screen worth showing. */
+    val opensProgress: Boolean get() = this == STARTED
+}
+
+/**
+ * Maps a start attempt to its outcome. [start] is only called when online, and its
+ * answer is the outcome — a refusal from the pipeline has to survive the trip out.
+ */
+internal fun startOutcome(online: Boolean, start: () -> Boolean): SearchStart = when {
+    !online -> SearchStart.QUEUED_OFFLINE
+    start() -> SearchStart.STARTED
+    else -> SearchStart.REFUSED_BUSY
 }

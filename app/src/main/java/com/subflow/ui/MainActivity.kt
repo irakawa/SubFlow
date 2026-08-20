@@ -251,8 +251,13 @@ fun SubFlowNavHost(viewModel: SearchViewModel) {
             ReleaseInputScreen(
                 viewModel = viewModel,
                 onStart = {
-                    if (viewModel.startPipeline()) navController.navigate("progress")
-                    else navController.popBackStack("home", inclusive = false)
+                    when (viewModel.startPipeline()) {
+                        // a refusal leaves the user on the form, where the reason is
+                        // already on screen; only a run that began has a progress screen
+                        SearchStart.STARTED -> navController.navigate("progress")
+                        SearchStart.QUEUED_OFFLINE -> navController.popBackStack("home", inclusive = false)
+                        SearchStart.REFUSED_BUSY, SearchStart.NOTHING_TO_RUN -> Unit
+                    }
                 },
                 onBack = { navController.popBackStack() }
             )
