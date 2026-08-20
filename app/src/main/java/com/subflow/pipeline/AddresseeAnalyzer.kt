@@ -32,10 +32,27 @@ object AddresseeAnalyzer {
         RegexOption.IGNORE_CASE
     )
 
-    // english phrases that only make sense addressing more than one person.
-    // liberal by design: a false positive here just skips the fix, never corrupts a line.
+    // english phrases that only make sense addressing more than one person. these are
+    // unambiguous: "you all" is never anything but a group being spoken to.
     private val groupAddress = Regex(
-        """\b(you all|all of you|you guys|you two|you three|you both|both of you|the two of you|you people|you lot|y'all|everyone|everybody)\b""",
+        """\b(you all|all of you|you guys|you two|you three|you both|both of you|the two of you|you people|you lot|y'all)\b""",
+        RegexOption.IGNORE_CASE
+    )
+
+    /**
+     * "everyone"/"everybody" only counts when it is being spoken *to*, not talked about.
+     *
+     * The word does two jobs. "Everyone, calm down" addresses a crowd; "Everyone left"
+     * is an ordinary subject and says nothing about who the speaker is facing. Treating
+     * both as a group cue put this file at odds with GrammarFixer, which deliberately
+     * keeps "herkes" out of its group words for precisely the second reason — the same
+     * sentence was read two opposite ways depending on which side looked at it.
+     *
+     * A comma is what separates the two in practice: a vocative is always set off by
+     * one, on whichever side it falls.
+     */
+    private val vocativeCrowd = Regex(
+        """(,\s*(everyone|everybody)\b)|(\b(everyone|everybody)\s*,)""",
         RegexOption.IGNORE_CASE
     )
 
@@ -57,7 +74,8 @@ object AddresseeAnalyzer {
         else -> Formality.UNKNOWN // san, senpai depend on context
     }
 
-    fun isGroupAddress(text: String): Boolean = groupAddress.containsMatchIn(text)
+    fun isGroupAddress(text: String): Boolean =
+        groupAddress.containsMatchIn(text) || vocativeCrowd.containsMatchIn(text)
 
     private fun strongest(a: Formality?, b: Formality): Formality = when {
         a == null -> b

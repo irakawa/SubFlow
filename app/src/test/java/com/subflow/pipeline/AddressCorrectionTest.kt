@@ -69,10 +69,14 @@ class AddressCorrectionTest {
     }
 
     @Test
-    fun `unmarked line with no anchor stays ambiguous`() {
+    fun `unmarked line with no anchor addresses one person`() {
+        // this used to assert AMBIGUOUS, which is what kept rule 3.2 from ever running on
+        // a source without a honorific. Only an explicit group cue makes it plural now;
+        // an unmarked line reads as one addressee, and the register stays unclaimed.
         val t = SceneParticipantTracker()
         val a = t.next("The weather is nice today.")
-        assertEquals(Plurality.AMBIGUOUS, a.plurality)
+        assertEquals(Plurality.SINGLE, a.plurality)
+        assertEquals(Formality.UNKNOWN, a.formality)
     }
 
     // --- GrammarFixer: LAYER 1 (group markers) ---

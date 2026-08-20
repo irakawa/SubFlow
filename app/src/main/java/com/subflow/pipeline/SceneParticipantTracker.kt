@@ -40,18 +40,23 @@ class SceneParticipantTracker {
         }
 
         // formality anchor: this line's honorific, or a recent one still in the window.
+        // absent one we do not guess — UNKNOWN, which keeps the register decision out of
+        // it and only allows the plural-ending repair.
         val formality = when {
             honorific != null -> honorific
-            sinceHonorific <= window -> ambientFormality
-            else -> null
+            sinceHonorific <= window -> ambientFormality ?: Formality.UNKNOWN
+            else -> Formality.UNKNOWN
         }
 
-        // single only with a live honorific anchor and no group address nearby;
-        // otherwise stay out of it so we never touch an unmarked plural scene.
-        return if (formality != null && sinceGroup > window) {
+        // how many people are being addressed and how formally are separate questions,
+        // and only the second one needs a honorific. Tying plurality to the honorific
+        // meant every source without one — English film, series, animation, most of what
+        // this app is pointed at — resolved AMBIGUOUS forever and rule 3.2 never ran.
+        // Absent an explicit group cue, one addressee is the reading dialogue supports.
+        return if (sinceGroup > window) {
             Addressee(Plurality.SINGLE, formality)
         } else {
-            Addressee(Plurality.AMBIGUOUS, formality ?: Formality.UNKNOWN)
+            Addressee(Plurality.AMBIGUOUS, formality)
         }
     }
 }
