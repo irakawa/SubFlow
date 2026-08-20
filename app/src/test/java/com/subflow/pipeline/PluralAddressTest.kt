@@ -1,6 +1,7 @@
 package com.subflow.pipeline
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -56,6 +57,40 @@ class PluralAddressTest {
         assertTrue(AddresseeAnalyzer.isGroupAddress("Gentlemen, we have a problem."))
         assertTrue(AddresseeAnalyzer.isGroupAddress("Ladies, this way."))
         assertTrue(AddresseeAnalyzer.isGroupAddress("Guys, look at this."))
+    }
+
+    // --- a vocative is a vocative, not any word that starts like one ---
+
+    @Test
+    fun `a plural vocative counts only when it is the address itself`() {
+        assertTrue(AddresseeAnalyzer.hasPluralAddress("Beyler, geç kaldınız."))
+        assertTrue(AddresseeAnalyzer.hasPluralAddress("Çocuklar, buraya gelin."))
+        // these are objects of the sentence, not who it is spoken to
+        assertFalse(AddresseeAnalyzer.hasPluralAddress("Kardeşlerimi gördünüz mü?"))
+        assertFalse(AddresseeAnalyzer.hasPluralAddress("Çocukları okula götürdünüz."))
+        assertFalse(AddresseeAnalyzer.hasPluralAddress("Arkadaşlarım geldi."))
+        assertFalse(AddresseeAnalyzer.hasPluralAddress("Askerleri gördünüz."))
+    }
+
+    @Test
+    fun `a third-person plural noun does not block the repair`() {
+        // measured loss: this used to be repaired and stopped being, in the corpus the
+        // rule was written for
+        val t = SceneParticipantTracker()
+        t.next("Naruto-kun, stop!")
+        assertEquals(
+            "Kardeşlerimi gördün mü?",
+            fix("Did you see my brothers?", "Kardeşlerimi gördünüz mü?", t)
+        )
+    }
+
+    @Test
+    fun `a pronoun still matches through its case endings`() {
+        // "hepiniz" is never anything but second-person plural, so its suffixed forms
+        // stay on prefix matching
+        assertTrue(AddresseeAnalyzer.hasPluralAddress("Hepinize söyledim."))
+        assertTrue(AddresseeAnalyzer.hasPluralAddress("Sizlere güveniyorum."))
+        assertTrue(AddresseeAnalyzer.hasPluralAddress("İkinizi de görüyorum."))
     }
 
     // --- what was shown vs what was assumed ---

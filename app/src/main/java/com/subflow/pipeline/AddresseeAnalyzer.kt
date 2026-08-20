@@ -65,15 +65,24 @@ object AddresseeAnalyzer {
      * translation for them to say it. Read as a veto only — it stops a repair, never
      * starts one — so a false positive costs an unrepaired line and nothing worse.
      */
-    private val turkishPluralAddress = listOf(
-        // second-person-plural pronouns and quantifiers
+    // Second-person-plural pronouns and quantifiers. Prefix matching, because these
+    // words are nothing but an address in any of their case forms: "hepinize",
+    // "sizlere", "ikinizi" are all still speaking to a group.
+    private val pluralPronouns = listOf(
         "hepiniz", "sizler", "tümünüz", "ikiniz", "üçünüz", "dördünüz", "beşiniz",
         "hiçbiriniz", "biriniz", "herbiriniz", "çoğunuz", "bazılarınız", "kiminiz",
-        "hanginiz", "kaçınız",
-        // plural vocatives
+        "hanginiz", "kaçınız"
+    ).map { TextMatch.wordStart(it) }
+
+    // Plural vocatives. Whole-word matching, because unlike the pronouns these are
+    // ordinary nouns and only the bare form is an address. "Beyler, geç kaldınız."
+    // speaks to a crowd; "Kardeşlerimi gördünüz mü?" speaks to one person about some
+    // brothers, and prefix matching read the second as the first — a repair the rule
+    // used to make, lost in exactly the corpus it was written for.
+    private val pluralVocatives = listOf(
         "beyler", "baylar", "hanımlar", "bayanlar", "beyefendiler", "hanımefendiler",
         "çocuklar", "arkadaşlar", "dostlar", "gençler", "askerler", "kardeşler"
-    ).map { TextMatch.wordStart(it) }
+    ).map { TextMatch.wholeWord(it) }
 
     /**
      * true when the Turkish line marks its addressee as plural in so many words.
@@ -85,7 +94,8 @@ object AddresseeAnalyzer {
      */
     fun hasPluralAddress(turkishLine: String): Boolean {
         val lower = turkishLine.lowercase(tr)
-        return turkishPluralAddress.any { it.containsMatchIn(lower) }
+        return pluralPronouns.any { it.containsMatchIn(lower) } ||
+            pluralVocatives.any { it.containsMatchIn(lower) }
     }
 
 
