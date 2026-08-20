@@ -75,6 +75,95 @@ object GrammarFixer {
             m.groupValues[1] + m.groupValues[2].dropLast(2)
         }
 
+    // --- SUBFLOW_LANGUAGE_RULES 3.2, second-person-plural IMPERATIVE ---
+    //
+    // The rule above strips a plural marker off a conjugated predicate: "-sınız" is the
+    // singular copula "-sın" plus "-ız", so dropping two characters lands on the singular.
+    // An imperative is built the other way round — the suffix hangs straight off the bare
+    // stem ("kal" + "ınız") — so that rule neither matched "kalınız" nor could have
+    // produced "kal" from it, and the reported "yerinde kalınız" went out untouched.
+    //
+    // Only the polite "-ınız/-iniz/-unuz/-ünüz" family is handled. The plain "-ın/-in/
+    // -un/-ün" imperative is left alone on purpose: it is spelled exactly like the
+    // genitive and the possessive, and "gelin" (bride), "kalın" (thick), "burun" (nose)
+    // are ordinary words. There is no safe way to tell them apart, so we don't try.
+
+    private val politeImperative = Regex(
+        "(?<![\\p{L}\\p{N}])(\\p{L}+?)(y?)(ınız|iniz|unuz|ünüz)(?![\\p{L}\\p{N}])",
+        RegexOption.IGNORE_CASE
+    )
+
+    // "-ınız" preceded by s, d or t is the predicate ending the rule above owns
+    // ("nasıl|sınız", "gör|dünüz"). Never the imperative's business.
+    private val predicateConsonant = setOf('s', 'd', 't', 'S', 'D', 'T')
+
+    // Turkish softens p/ç/t/k to b/c/d/ğ before a vowel: the stem of "gidiniz" is "git",
+    // not "gid". Reversing that is a guess, and a wrong stem is worse than no fix.
+    private val softenedFinal = setOf('b', 'c', 'd', 'ğ', 'B', 'C', 'D', 'Ğ')
+
+    /** below this a stem is more likely an irregular remnant ("yiyiniz" -> "yi", stem "ye"). */
+    private const val MIN_STEM = 3
+
+    /**
+     * Reduces a polite plural imperative to the singular, for one informal addressee.
+     *
+     * Needs [source] because the Turkish suffix is ambiguous on its own: "-ınız" is also
+     * the second-person-plural possessive, so "kitabınız" (your book) is spelled like an
+     * imperative and is not one. English tells them apart — an imperative has no subject —
+     * and getting this wrong turns a noun into a verb stem, so the source has the final say.
+     */
+    fun fixPluralImperative(source: String, translated: String, addressee: Addressee): String {
+        if (addressee.plurality != Plurality.SINGLE) return translated
+        if (addressee.formality == Formality.FORMAL) return translated // "siz" is the respect
+        if (!looksImperative(source)) return translated
+
+        return politeImperative.replace(translated) { m ->
+            val stem = m.groupValues[1]
+            val buffer = m.groupValues[2] // the "y" that joins a vowel-final stem
+            val last = stem.lastOrNull()
+            when {
+                stem.length < MIN_STEM -> m.value
+                // only a bare suffix can be the predicate's; with a y buffer it cannot be
+                buffer.isEmpty() && last in predicateConsonant -> m.value
+                last in softenedFinal -> m.value
+                else -> stem
+            }
+        }
+    }
+
+    // fillers that can open an order without being the verb
+    private val imperativeFillers = setOf(
+        "please", "hey", "oh", "ah", "okay", "ok", "well", "now", "just",
+        "alright", "and", "but", "so", "then", "yeah", "yes", "no", "hmm", "come", "on"
+    )
+
+    // a line opening with one of these has a subject or is a question, so it is not an
+    // order. "don't" and "never" are absent on purpose: "Don't move" is an imperative.
+    private val nonImperativeOpeners = setOf(
+        "i", "you", "he", "she", "it", "we", "they", "there", "that", "this", "these", "those",
+        "the", "a", "an", "my", "your", "his", "her", "its", "our", "their",
+        "is", "are", "am", "was", "were", "been", "being", "do", "does", "did",
+        "can", "could", "will", "would", "shall", "should", "may", "might", "must",
+        "have", "has", "had", "let's", "lets",
+        "what", "where", "when", "why", "how", "who", "whom", "which", "whose",
+        "if", "because", "everyone", "everybody", "someone", "somebody", "nobody",
+        "everything", "nothing", "something", "maybe", "perhaps",
+        "i'm", "you're", "he's", "she's", "it's", "we're", "they're",
+        "there's", "that's", "i'll", "you'll", "i've", "you've", "i'd", "you'd"
+    )
+
+    /** true when [source] reads as an order rather than a statement or a question. */
+    private fun looksImperative(source: String): Boolean {
+        val trimmed = source.trim()
+        if (trimmed.isEmpty() || trimmed.endsWith("?")) return false
+        // ROOT, not the Turkish locale: lowercasing English "I" in tr gives "ı"
+        val tokens = trimmed.split(Regex("[^\\p{L}']+"))
+            .filter { it.isNotBlank() }
+            .map { it.lowercase(Locale.ROOT) }
+        val first = tokens.firstOrNull { it !in imperativeFillers } ?: return false
+        return first !in nonImperativeOpeners
+    }
+
     /** copies the first-letter casing of [original] onto [replacement]. */
     private fun preserveCase(original: String, replacement: String): String =
         if (original.firstOrNull()?.isUpperCase() == true) {

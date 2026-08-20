@@ -806,6 +806,9 @@ object PipelineRunner {
                     val addressee = addressTracker.next(cue.text)
                     text = runCatching {
                         var t = GrammarFixer.fix(text, addressee)          // 3.2 singular/plural
+                        // 3.2 again, for the imperative: a different suffix on a different
+                        // stem, and it needs the source to tell an order from a possessive
+                        t = GrammarFixer.fixPluralImperative(cue.text, t, addressee)
                         t = GrammarFixer.fixSurpriseParticle(cue.text, t)  // 3.3 stray mı/mi
                         StutterPreserver.apply(cue.text, t)                // 2.1 stutter
                     }.getOrDefault(text)
