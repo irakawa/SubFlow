@@ -79,21 +79,21 @@ class AddressCorrectionTest {
         assertEquals(Formality.UNKNOWN, a.formality)
     }
 
-    // --- GrammarFixer: LAYER 1 (group markers) ---
+    // --- GrammarFixer: LAYER 1 (group markers) vs the line's own plural marking ---
 
     @Test
-    fun `layer 1 collapses group words for an informal single addressee`() {
-        val a = Addressee(Plurality.SINGLE, Formality.INFORMAL)
-        assertEquals("Sen gel.", GrammarFixer.fix("Hepiniz gel.", a))
-        assertEquals("sana söyledim", GrammarFixer.fix("sizlere söyledim", a))
-    }
+    fun `the line's plural marking outranks any addressee we resolved`() {
+        // these two used to expect "Sen gel." and "Siz gelin.". Layer 1 rewrites an
+        // explicit group word into a singular pronoun on the strength of what the
+        // *source* implied, and the word it rewrites is itself the clearest statement
+        // that this is a crowd. When the two disagree the line wins, on either branch.
+        val informal = Addressee(Plurality.SINGLE, Formality.INFORMAL)
+        assertEquals("Hepiniz gel.", GrammarFixer.fix("Hepiniz gel.", informal))
+        assertEquals("sizlere söyledim", GrammarFixer.fix("sizlere söyledim", informal))
 
-    @Test
-    fun `layer 1 fires even for a formal single addressee but keeps siz`() {
-        // group word is wrong for one person even with respect, but the pronoun stays formal
-        val a = Addressee(Plurality.SINGLE, Formality.FORMAL)
-        assertEquals("Siz gelin.", GrammarFixer.fix("Hepiniz gelin.", a))
-        assertEquals("size güveniyorum", GrammarFixer.fix("sizlere güveniyorum", a))
+        val formal = Addressee(Plurality.SINGLE, Formality.FORMAL)
+        assertEquals("Hepiniz gelin.", GrammarFixer.fix("Hepiniz gelin.", formal))
+        assertEquals("sizlere güveniyorum", GrammarFixer.fix("sizlere güveniyorum", formal))
     }
 
     // --- GrammarFixer: LAYER 2 (sen/siz conjugation) ---

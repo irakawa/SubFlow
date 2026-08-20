@@ -25,14 +25,23 @@ object GrammarFixer {
         val evidenced = addressee.plurality == Plurality.SINGLE
         val assumed = addressee.plurality == Plurality.SINGLE_ASSUMED
         if (!evidenced && !assumed) return line // group / ambiguous is left as is
-        // an assumption yields to what the line itself says: "Beyler, geç kaldınız."
-        // is a crowd whatever the source did or didn't manage to say
-        if (assumed && AddresseeAnalyzer.hasPluralAddress(line)) return line
+        // Whichever branch we are on, the line itself gets the last word. A honorific
+        // says the speaker is on familiar terms with someone; it does not say that this
+        // Turkish sentence is addressed to one person, and "Beyler, geç kaldınız." says
+        // it is not. Asking only on the assumed branch meant every honorific-bearing
+        // file — anime, the corpus this rule was written for — kept singularising real
+        // plurals for four lines after each honorific.
+        if (AddresseeAnalyzer.hasPluralAddress(line)) return line
         val formal = addressee.formality == Formality.FORMAL
 
         // LAYER 1 rewrites "hepiniz" as "sen", which asserts there is one person. Only
         // evidence licenses that; on an assumption it would be the app inventing the
         // scene rather than repairing the translation of it.
+        //
+        // Note that the veto above now subsumes this: every word in [groupWords] is also
+        // explicit plural marking, so a line that would reach LAYER 1 is stopped before
+        // it. Kept rather than deleted because it is the veto list that decides that,
+        // and narrowing the veto would put these back in play.
         var out = if (evidenced) fixGroupMarkers(line, formal) else line
         if (!formal) out = singularizeVerbs(out) // LAYER 2, casual/unknown only
         return out
@@ -175,7 +184,8 @@ object GrammarFixer {
         val evidenced = addressee.plurality == Plurality.SINGLE
         val assumed = addressee.plurality == Plurality.SINGLE_ASSUMED
         if (!evidenced && !assumed) return translated
-        if (assumed && AddresseeAnalyzer.hasPluralAddress(translated)) return translated
+        // same rule as [fix]: the line's own plural marking outranks either branch
+        if (AddresseeAnalyzer.hasPluralAddress(translated)) return translated
         if (addressee.formality == Formality.FORMAL) return translated // "siz" is the respect
         if (sourceLang.lowercase(Locale.ROOT) !in englishTags) return translated
         if (possessiveSource.containsMatchIn(source)) return translated

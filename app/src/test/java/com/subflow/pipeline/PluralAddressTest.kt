@@ -73,14 +73,49 @@ class PluralAddressTest {
     }
 
     @Test
-    fun `only evidenced single rewrites a group word into a pronoun`() {
-        // layer 1 replaces "hepiniz" with "sen", which claims to know there is one
-        // person. Evidence, not assumption, is what licenses that.
+    fun `a honorific does not license overriding the line's own plural marking`() {
+        // this used to expect "Sen gel." on the evidenced branch, while the same code
+        // answered hasPluralAddress("Hepiniz gel.") == true. A honorific says the speaker
+        // is on familiar terms with someone; it does not say the Turkish line in front of
+        // us is addressed to one person, and the line says otherwise.
         val evidenced = SceneParticipantTracker()
-        assertEquals("Sen gel.", fix("Naruto-kun, come here.", "Hepiniz gel.", evidenced))
+        assertEquals("Hepiniz gel.", fix("Naruto-kun, come here.", "Hepiniz gel.", evidenced))
 
         val assumed = SceneParticipantTracker()
         assertEquals("Hepiniz gel.", fix("Come here.", "Hepiniz gel.", assumed))
+    }
+
+    // --- the veto does not care which branch asked ---
+
+    @Test
+    fun `a plural line survives a nearby honorific`() {
+        // measured: after "Naruto-kun, stop!" the tracker reports evidenced SINGLE for
+        // the next four lines, and the veto was not being asked on that branch at all
+        val t = SceneParticipantTracker()
+        t.next("Naruto-kun, stop!")
+        assertEquals("Hepiniz tutuklusunuz.", fix("Under arrest.", "Hepiniz tutuklusunuz.", t))
+        assertEquals("Beyler, geç kaldınız.", fix("You are late.", "Beyler, geç kaldınız.", t))
+        assertEquals("İkiniz de tutuklusunuz.", fix("Under arrest.", "İkiniz de tutuklusunuz.", t))
+    }
+
+    @Test
+    fun `a plural line survives a nearby honorific through the imperative rule too`() {
+        val t = SceneParticipantTracker()
+        t.next("Naruto-kun, stop!")
+        val src = "Wait here."
+        val a = t.next(src)
+        assertEquals(
+            "Beyler, bekleyiniz.",
+            GrammarFixer.fixPluralImperative(src, "en", GrammarFixer.fix("Beyler, bekleyiniz.", a), a)
+        )
+    }
+
+    @Test
+    fun `the honorific scene is still repaired when the line marks nothing`() {
+        // the veto only stops a repair; a line with no plural marking is untouched by it
+        val t = SceneParticipantTracker()
+        t.next("Naruto-kun, are you okay?")
+        assertEquals("İyi misin?", fix("Are you okay?", "İyi misiniz?", t))
     }
 
     // --- the repairs this layer exists for still happen ---
