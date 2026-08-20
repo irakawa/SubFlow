@@ -126,11 +126,19 @@ class PostProcessor(private val targetLang: String = "tr") {
      * keep source proper names in the output, including names first seen in an earlier
      * cue: a character doesn't stop being a name halfway through the episode just
      * because this line doesn't repeat it (rule 6, terminology consistency).
+     *
+     * A name is only remembered when its lowercase form isn't an ordinary word in the
+     * target language. Plenty of names are also everyday Turkish words — Ben, Can, Ada,
+     * Kaya, Deniz — and remembering one turns every later "ben" (I) into "Ben". The
+     * trade is deliberate: skipping the restoration costs one capital on one line,
+     * while the collision costs every line that uses the ordinary word, and the
+     * ordinary word occurs far more often than the character does.
      */
     private fun restoreProperNames(source: String, line: String): String {
         Regex("\\b[A-Z][a-z]{2,}\\b").findAll(source)
             .map { it.value }
             .filterNot { it in commonEnglishWords }
+            .filterNot { targetLang == "tr" && it.lowercase() in commonTurkishWords }
             .forEach { properNames += it }
 
         var out = line
@@ -148,6 +156,38 @@ class PostProcessor(private val targetLang: String = "tr") {
         "The", "This", "That", "What", "When", "Where", "Why", "How",
         "And", "But", "You", "Are", "Was", "Were", "Have", "Has", "Not",
         "All", "Can", "Will", "Just", "Now", "Then", "There", "Here"
+    )
+
+    /**
+     * Everyday Turkish words a source-language capital must never impose itself on.
+     *
+     * Only ASCII spellings are listed, and only three letters or more, because that is
+     * exactly what the name regex above can produce: `[A-Z][a-z]{2,}` cannot match ı, ş,
+     * ğ, ö, ü or ç, so a Turkish word containing one can never collide. Entries are
+     * high-frequency words plus the given names that double as them, which is where the
+     * damage actually comes from.
+     */
+    private val commonTurkishWords = setOf(
+        // pronouns and their cases — the highest-frequency collisions
+        "ben", "beni", "bana", "benim", "bende", "benden",
+        "sen", "seni", "sana", "senin", "sende", "senden",
+        "biz", "bizi", "bize", "bizim", "siz", "sizi", "size", "sizin",
+        "onu", "ona", "onun", "onda", "ondan", "onlar", "bunu", "buna", "bunun", "bunlar",
+        "kim", "kime", "kimi", "kimin", "kendi",
+        // function words
+        "ama", "ile", "ise", "gibi", "kadar", "daha", "hem", "her", "hep", "tam",
+        "sonra", "bile", "yine", "hala", "asla", "belki", "zaten", "ancak", "veya",
+        "evet", "tabii", "yani", "peki", "haydi", "hadi",
+        // very common nouns and verb stems that are also given names
+        "ada", "adam", "aile", "akil", "alan", "ana", "anne", "araba", "arka", "asker",
+        "baba", "bahar", "bal", "bir", "biri", "bora", "bura", "burada",
+        "can", "cam", "deniz", "derin", "ders", "dil", "dost", "dur", "duman",
+        "ege", "efe", "ela", "elma", "emir", "esen", "eve",
+        "gece", "gel", "git", "guzel", "hava", "hayat", "kal", "kan", "kara", "kaya",
+        "kol", "kul", "kum", "lale", "mal", "mavi", "mert", "nar", "nur",
+        "oda", "okul", "olan", "onur", "orada", "ozan", "para", "ruh",
+        "sabah", "savas", "sel", "ses", "son", "soru", "tan", "tek", "ton", "top",
+        "tur", "umut", "uzak", "var", "yan", "yaz", "yer", "yol", "zaman"
     )
 
     /** true if the translation looks like nonsense, caller can retry another source */
