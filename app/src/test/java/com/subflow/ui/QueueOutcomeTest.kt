@@ -19,7 +19,7 @@ class QueueOutcomeTest {
     fun `a refused run keeps the queue`() {
         var cleared = false
         val outcome = queueOutcome(
-            busy = true, online = true,
+            busy = true, online = true, queuedCount = 3,
             start = { true },
             clear = { cleared = true }
         )
@@ -31,7 +31,7 @@ class QueueOutcomeTest {
     fun `a run the pipeline refuses at the last moment keeps the queue`() {
         var cleared = false
         val outcome = queueOutcome(
-            busy = false, online = true,
+            busy = false, online = true, queuedCount = 3,
             start = { false },
             clear = { cleared = true }
         )
@@ -43,7 +43,7 @@ class QueueOutcomeTest {
     fun `being offline keeps the queue`() {
         var cleared = false
         val outcome = queueOutcome(
-            busy = false, online = false,
+            busy = false, online = false, queuedCount = 3,
             start = { true },
             clear = { cleared = true }
         )
@@ -55,7 +55,7 @@ class QueueOutcomeTest {
     fun `the queue is dropped only once a run is under way`() {
         var cleared = false
         val outcome = queueOutcome(
-            busy = false, online = true,
+            busy = false, online = true, queuedCount = 3,
             start = { true },
             clear = { cleared = true }
         )
@@ -64,9 +64,21 @@ class QueueOutcomeTest {
     }
 
     @Test
+    fun `an empty queue is nothing to run, and nothing is cleared`() {
+        var cleared = false
+        val outcome = queueOutcome(
+            busy = false, online = true, queuedCount = 0,
+            start = { true },
+            clear = { cleared = true }
+        )
+        assertEquals(SearchStart.NOTHING_TO_RUN, outcome)
+        assertFalse(cleared)
+    }
+
+    @Test
     fun `the pipeline is not asked while busy`() {
         var asked = false
-        queueOutcome(busy = true, online = true, start = { asked = true; true }, clear = {})
+        queueOutcome(busy = true, online = true, queuedCount = 3, start = { asked = true; true }, clear = {})
         assertFalse(asked)
     }
 }

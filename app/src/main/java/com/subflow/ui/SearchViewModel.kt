@@ -390,17 +390,18 @@ class SearchViewModel(app: Application) : AndroidViewModel(app) {
     // runs every queued search as one batch. the queue survives anything short of an
     // actual start. builds from each queued form without touching the live form.
     fun runQueue(): SearchStart {
-        if (isBusy()) return SearchStart.REFUSED_BUSY
+        // every decision is queueOutcome's, and it gets the real values. Repeating the
+        // checks here and then handing it constants meant the tested branches were the
+        // ones that never ran, and the ones that did run were untested.
         val forms = SearchQueue.all()
-        if (forms.isEmpty()) return SearchStart.NOTHING_TO_RUN
-        if (!ConnectivityWatcher.isOnline(getApplication())) return SearchStart.QUEUED_OFFLINE
-        val releases = forms.flatMap { buildReleases(it) }
-        // nothing buildable came out of them, so they are not worth keeping either
-        if (releases.isEmpty()) { SearchQueue.clear(); return SearchStart.NOTHING_TO_RUN }
-        PipelineRunner.reset()
         return queueOutcome(
-            busy = false, online = true,
-            start = { PipelineRunner.start(getApplication(), releases) },
+            busy = isBusy(),
+            online = ConnectivityWatcher.isOnline(getApplication()),
+            queuedCount = forms.size,
+            start = {
+                PipelineRunner.reset()
+                PipelineRunner.start(getApplication(), forms.flatMap { buildReleases(it) })
+            },
             clear = SearchQueue::clear
         )
     }
@@ -677,10 +678,12 @@ internal fun startFromStoredParams(
 internal fun queueOutcome(
     busy: Boolean,
     online: Boolean,
+    queuedCount: Int,
     start: () -> Boolean,
     clear: () -> Unit
 ): SearchStart = when {
     busy -> SearchStart.REFUSED_BUSY
+    queuedCount == 0 -> SearchStart.NOTHING_TO_RUN
     !online -> SearchStart.QUEUED_OFFLINE
     else -> startOutcome(online = true, start = start).also {
         if (it == SearchStart.STARTED) clear()
