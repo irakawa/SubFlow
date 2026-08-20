@@ -202,6 +202,8 @@
     <string name="backup_done">Yedeklendi ✓</string>
     <string name="restore_done">Geri yüklendi ✓</string>
     <string name="restore_fail">Geçersiz yedek dosyası</string>
+    <string name="backup_contents">Tema, dil, otomatik kaydetme ve takip edilen diziler yedeklenir. API anahtarları yedeğe girmez — bu cihazda kalır.</string>
+    <string name="restore_contents">API anahtarları yedekten geri yüklenmez. API anahtarları bölümünden yeniden gir.</string>
     <string name="open_in_player">▶ Oynatıcıda aç</string>
     <string name="no_player">Video oynatıcı bulunamadı</string>
     <string name="notif_ready">Altyazılar hazır</string>

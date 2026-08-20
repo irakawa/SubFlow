@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android auto-backup, API 30 (android:fullBackupContent). minSdk is 30, so this file
+  is live on real devices; API 31+ uses data_extraction_rules.xml instead.
+
+  Everything backs up except the API keys. They are the only secret the app holds, and
+  auto-backup copies them to the user's Google account without the user asking for it or
+  seeing it happen. Excluding the one preferences file keeps favourites, theme and
+  settings restorable while the secret stays on the device it was typed into.
+
+  The path must match ApiKeys.PREFS_FILE — BackupSecretsTest holds the two together.
+-->
+<full-backup-content>
+    <exclude domain="sharedpref" path="subflow_api_keys.xml" />
+</full-backup-content>

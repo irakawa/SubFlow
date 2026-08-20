@@ -222,14 +222,16 @@ fun SettingsScreen(onBack: () -> Unit, onStats: () -> Unit = {}) {
                 }
             }
         )
+        // the caption spells out what leaves the device. a backup file is easy to share
+        // by accident, so what is and isn't in it should not be a guess.
         SettingRow(
             title = stringResource(R.string.backup),
-            value = backupState ?: "",
+            value = backupState ?: stringResource(R.string.backup_contents),
             onClick = { exportLauncher.launch("subflow_backup.json") }
         )
         SettingRow(
             title = stringResource(R.string.restore),
-            value = "",
+            value = stringResource(R.string.restore_contents),
             onClick = { importLauncher.launch(arrayOf("application/json", "text/*", "*/*")) }
         )
         SettingRow(

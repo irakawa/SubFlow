@@ -197,6 +197,8 @@
     <string name="backup_done">Copiado ✓</string>
     <string name="restore_done">Restaurado ✓</string>
     <string name="restore_fail">Archivo de copia no válido</string>
+    <string name="backup_contents">Incluye tema, idioma, guardado automático y series seguidas. Las claves API no se copian — permanecen en este dispositivo.</string>
+    <string name="restore_contents">Las claves API nunca se restauran desde una copia. Vuelve a introducirlas en Claves API.</string>
     <string name="open_in_player">▶ Abrir en reproductor</string>
     <string name="no_player">No se encontró reproductor</string>
     <string name="notif_ready">Subtítulos listos</string>

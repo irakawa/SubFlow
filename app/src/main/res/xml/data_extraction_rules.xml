@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android auto-backup, API 31+ (android:dataExtractionRules).
+
+  Both transports are covered on purpose. <cloud-backup> is the Google account copy;
+  <device-transfer> is the direct phone-to-phone copy. Excluding only the first would
+  still hand the API keys to a new device over a channel the user never sees, so the
+  same exclusion is repeated for both.
+
+  The path must match ApiKeys.PREFS_FILE — BackupSecretsTest holds the two together.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="sharedpref" path="subflow_api_keys.xml" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="sharedpref" path="subflow_api_keys.xml" />
+    </device-transfer>
+</data-extraction-rules>

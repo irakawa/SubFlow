@@ -208,6 +208,8 @@
     <string name="backup_done">Backed up ✓</string>
     <string name="restore_done">Restored ✓</string>
     <string name="restore_fail">Invalid backup file</string>
+    <string name="backup_contents">Includes theme, language, auto-save and followed shows. API keys are not backed up — they stay on this device.</string>
+    <string name="restore_contents">API keys are never restored from a backup. Re-enter them under API keys.</string>
     <string name="open_in_player">▶ Open in player</string>
     <string name="no_player">No video player found</string>
     <string name="notif_ready">Subtitles ready</string>

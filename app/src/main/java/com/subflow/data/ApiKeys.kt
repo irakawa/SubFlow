@@ -3,11 +3,23 @@ package com.subflow.data
 import android.content.Context
 import android.content.SharedPreferences
 
-// free API keys from subdl/opensubtitles/subsource, stored on-device only.
-// a blank key just skips that source in the cascade.
+/**
+ * Free API keys from subdl/opensubtitles/subsource. On-device only.
+ * A blank key just skips that source in the cascade.
+ *
+ * These are the only secrets the app holds, so they get their own SharedPreferences
+ * file instead of sitting alongside [AppSettings]: a separate file is what lets the
+ * backup rules drop the keys without dropping everything else
+ * (res/xml/backup_rules.xml, res/xml/data_extraction_rules.xml).
+ * [PREFS_FILE] is the one name those rules and their test refer back to.
+ */
 object ApiKeys {
 
-    private const val PREFS = "subflow_api_keys"
+    const val PREFS = "subflow_api_keys"
+
+    /** on-disk name of [PREFS], as the backup rules have to spell it. */
+    const val PREFS_FILE = "$PREFS.xml"
+
     private var prefs: SharedPreferences? = null
 
     fun init(context: Context) {
