@@ -743,38 +743,43 @@ object PipelineRunner {
         return srt
     }
 
+    /** a batch with its names restored, and the cue indices left in the source language. */
+    internal data class Unmasked(val lines: List<String>, val untranslated: List<Int>)
+
     /**
      * Puts the masked names back, and deals with a provider that lost one.
      *
-     * A line whose tokens did not come back exactly as they went out is translated
-     * again without masking. That is precisely the behaviour this feature replaced, so
-     * a provider that cannot hold a token costs the honorific and nothing more — never
-     * a delivered line with "__SF0__" sitting in it.
+     * A line whose tokens did not come back is translated again without masking, which
+     * is precisely the behaviour this feature replaced: a provider that cannot hold a
+     * token costs the honorific and nothing more.
      *
-     * @return null when even the plain retry failed, which makes the batch untranslated
-     *   and lets the existing accounting dock the score for it rather than quietly
-     *   shipping source-language cues.
+     * When that second attempt also fails, only those lines stay in the source
+     * language. The batch is not thrown away — the lines that came back clean are
+     * finished work, and discarding twenty-five cues because one lost a token would
+     * make this feature worse than not having it. The abandoned indices come back with
+     * the result so [translateSubtitle] can add them to untranslatedPct; a result that
+     * quietly kept source-language cues would be claiming to be something it is not.
+     *
+     * [retranslate] is a parameter so the policy can be tested without a provider.
      */
-    private suspend fun unmask(
+    internal suspend fun unmaskBatch(
         masked: HonorificMask.Masked,
         translated: List<String>,
         sourceLines: List<String>,
-        sub: DownloadedSubtitle,
-        release: Release,
-        unhealthy: MutableSet<String>
-    ): List<String>? {
-        if (!masked.active) return translated
-        val (out, lost) = HonorificMask.restoreAll(masked, translated)
-        if (lost.isEmpty()) return out
-        val patched = out.toMutableList()
+        retranslate: suspend (List<String>) -> List<String>?
+    ): Unmasked {
+        if (!masked.active) return Unmasked(translated, emptyList())
+        val (restored, lost) = HonorificMask.restoreAll(masked, translated)
+        if (lost.isEmpty()) return Unmasked(restored, emptyList())
 
-        log(LogLevel.WARN, L10n.t(R.string.log_honorific_lost, lost.size))
-        val plain = TranslationEngine.translateLines(
-            lost.map { sourceLines[it] }, sub.language, release.targetLang, unhealthy
-        ) { } ?: return null
-        if (plain.lines.size != lost.size) return null
-        lost.forEachIndexed { k, i -> patched[i] = plain.lines[k] }
-        return patched
+        val out = restored.toMutableList()
+        val plain = retranslate(lost.map { sourceLines[it] })
+        if (plain != null && plain.size == lost.size) {
+            lost.forEachIndexed { k, i -> out[i] = plain[k] }
+            return Unmasked(out, emptyList())
+        }
+        lost.forEach { i -> out[i] = sourceLines[i] }
+        return Unmasked(out, lost)
     }
 
     /**
@@ -790,6 +795,9 @@ object PipelineRunner {
         val post = PostProcessor(release.targetLang)
         val batches = cues.chunked(TranslationEngine.BATCH_SIZE)
         val batchResults = arrayOfNulls<List<String>>(batches.size)
+        // cues inside an otherwise translated batch that had to stay in the source
+        // language because their protected name never came back
+        val partialUntranslated = IntArray(batches.size)
         // providers that failed earlier in this file are tried last on later batches
         val unhealthyProviders = mutableSetOf<String>()
         // true once the sanitize repair has actually rewritten a line somewhere in this
@@ -815,11 +823,17 @@ object PipelineRunner {
                 } ?: continue
                 if (bi == 0) Log.d("SubFlow", "Raw MT sample: ${mt.lines.firstOrNull()?.take(80)}")
 
-                val unmasked = unmask(masked, mt.lines, sourceLines, sub, release, unhealthyProviders)
-                    ?: continue // tokens lost and the plain retry failed too: batch is untranslated
+                val unmasked = unmaskBatch(masked, mt.lines, sourceLines) { lostLines ->
+                    log(LogLevel.WARN, L10n.t(R.string.log_honorific_lost, lostLines.size))
+                    TranslationEngine.translateLines(
+                        lostLines, sub.language, release.targetLang, unhealthyProviders
+                    ) { }?.lines
+                }
+                partialUntranslated[bi] = unmasked.untranslated.size
 
                 // register-restoration dictionary is target-language specific
-                val dictApplied = if (release.targetLang == "tr") MegaDictionary.apply(unmasked) else unmasked
+                val dictApplied =
+                    if (release.targetLang == "tr") MegaDictionary.apply(unmasked.lines) else unmasked.lines
                 if (bi == 0) Log.d("SubFlow", "Post-dict sample: ${dictApplied.firstOrNull()?.take(80)}")
 
                 var processed = post.processBatch(sourceLines, dictApplied)
@@ -828,13 +842,22 @@ object PipelineRunner {
                     val retry = TranslationEngine.translateLines(
                         masked.lines, sub.language, release.targetLang, unhealthyProviders, avoid = mt.provider
                     ) { }
-                    val retryLines = retry?.let {
-                        unmask(masked, it.lines, sourceLines, sub, release, unhealthyProviders)
+                    val retryUnmasked = retry?.let {
+                        unmaskBatch(masked, it.lines, sourceLines) { lostLines ->
+                            TranslationEngine.translateLines(
+                                lostLines, sub.language, release.targetLang, unhealthyProviders
+                            ) { }?.lines
+                        }
                     }
-                    if (retryLines != null) {
+                    if (retryUnmasked != null) {
+                        val retryLines = retryUnmasked.lines
                         val retryDict = if (release.targetLang == "tr") MegaDictionary.apply(retryLines) else retryLines
                         val reprocessed = post.processBatch(sourceLines, retryDict)
-                        if (!reprocessed.retrySuggested) processed = reprocessed
+                        if (!reprocessed.retrySuggested) {
+                            processed = reprocessed
+                            // this batch's contribution is the accepted attempt's, not both
+                            partialUntranslated[bi] = retryUnmasked.untranslated.size
+                        }
                     }
                 }
                 if (processed.toneHardened) toneHardened = true
@@ -867,7 +890,9 @@ object PipelineRunner {
         // cues that stay in the source language. batches differ in size (the last one is
         // short), so count cues, not batches — the log line above is transient, this
         // number ships with the result.
-        val untranslatedCues = batches.filterIndexed { bi, _ -> batchResults[bi] == null }.sumOf { it.size }
+        val untranslatedCues =
+            batches.filterIndexed { bi, _ -> batchResults[bi] == null }.sumOf { it.size } +
+                batches.indices.sumOf { bi -> if (batchResults[bi] == null) 0 else partialUntranslated[bi] }
         val untranslatedPct = Quality.untranslatedPercent(untranslatedCues, cues.size)
 
         // final grammar stage: singular/plural address fix (SUBFLOW_LANGUAGE_RULES 3.2).
