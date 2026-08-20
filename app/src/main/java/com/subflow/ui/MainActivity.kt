@@ -220,14 +220,14 @@ fun SubFlowNavHost(viewModel: SearchViewModel) {
                     navController.navigate("input")
                 },
                 onRetryLast = {
-                    if (viewModel.retryLast()) navController.navigate("progress")
+                    if (viewModel.retryLast().opensProgress) navController.navigate("progress")
                 },
                 onSettings = { navController.navigate("settings") },
                 onOpenHistory = { entry -> viewModel.openHistory(entry) },
                 onFavorites = { navController.navigate("favorites") },
                 onContinue = { navController.navigate("progress") },
                 onRunQueue = {
-                    if (viewModel.runQueue()) navController.navigate("progress") { popUpTo("home") }
+                    if (viewModel.runQueue().opensProgress) navController.navigate("progress") { popUpTo("home") }
                 }
             )
         }

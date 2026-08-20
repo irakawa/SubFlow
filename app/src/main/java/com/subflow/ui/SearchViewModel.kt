@@ -387,17 +387,22 @@ class SearchViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    // runs every queued search as one batch. false if still offline or empty, in which
-    // case the queue is kept. builds from each queued form without touching the live form.
-    fun runQueue(): Boolean {
+    // runs every queued search as one batch. the queue survives anything short of an
+    // actual start. builds from each queued form without touching the live form.
+    fun runQueue(): SearchStart {
+        if (isBusy()) return SearchStart.REFUSED_BUSY
         val forms = SearchQueue.all()
-        if (forms.isEmpty()) return false
-        if (!ConnectivityWatcher.isOnline(getApplication())) return false
+        if (forms.isEmpty()) return SearchStart.NOTHING_TO_RUN
+        if (!ConnectivityWatcher.isOnline(getApplication())) return SearchStart.QUEUED_OFFLINE
         val releases = forms.flatMap { buildReleases(it) }
-        if (releases.isEmpty()) { SearchQueue.clear(); return false }
-        SearchQueue.clear() // safe, confirmed online above
+        // nothing buildable came out of them, so they are not worth keeping either
+        if (releases.isEmpty()) { SearchQueue.clear(); return SearchStart.NOTHING_TO_RUN }
         PipelineRunner.reset()
-        return PipelineRunner.start(getApplication(), releases)
+        return queueOutcome(
+            busy = false, online = true,
+            start = { PipelineRunner.start(getApplication(), releases) },
+            clear = SearchQueue::clear
+        )
     }
 
 
@@ -405,7 +410,12 @@ class SearchViewModel(app: Application) : AndroidViewModel(app) {
     fun clearQueue() = SearchQueue.clear()
 
     // re-runs the last search with the same params, season mode included
-    fun retryLast(): Boolean = PipelineRunner.retryLastBatch(getApplication())
+    fun retryLast(): SearchStart {
+        if (isBusy()) return SearchStart.REFUSED_BUSY
+        // a false here means there is no last batch, not that we were turned away
+        return if (PipelineRunner.retryLastBatch(getApplication())) SearchStart.STARTED
+        else SearchStart.NOTHING_TO_RUN
+    }
 
     // episodes from the last batch with no result (season mode only)
     val retryableFailedCount: StateFlow<Int> = PipelineRunner.results
@@ -645,4 +655,25 @@ internal fun startFromStoredParams(
     if (busy) return SearchStart.REFUSED_BUSY
     applyForm()
     return start()
+}
+
+/**
+ * Runs the offline queue, and only drops it once something is actually running.
+ *
+ * SearchQueue.clear() writes through to SharedPreferences, so it cannot be taken back.
+ * It used to be called before the start that can refuse, which meant a refused queue
+ * run deleted the very searches it declined to run. Clearing is the last thing that
+ * happens and only on STARTED, so every other outcome leaves the queue where it was.
+ */
+internal fun queueOutcome(
+    busy: Boolean,
+    online: Boolean,
+    start: () -> Boolean,
+    clear: () -> Unit
+): SearchStart = when {
+    busy -> SearchStart.REFUSED_BUSY
+    !online -> SearchStart.QUEUED_OFFLINE
+    else -> startOutcome(online = true, start = start).also {
+        if (it == SearchStart.STARTED) clear()
+    }
 }
