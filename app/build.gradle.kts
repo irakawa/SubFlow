@@ -25,8 +25,8 @@ android {
         applicationId = "com.subflow"
         minSdk = 30
         targetSdk = 35
-        versionCode = 69
-        versionName = "2.38.0"
+        versionCode = 70
+        versionName = "2.39.0"
         ndk {
             abiFilters += listOf("arm64-v8a", "armeabi-v7a")
         }
