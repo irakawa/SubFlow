@@ -132,6 +132,14 @@ internal object HonorificMask {
             val original = masked.originalOf(token) ?: return null
             out = out.replace(token, original)
         }
+        // Anything token-shaped still here is not ours to explain. Checking only the
+        // tokens this line was *expected* to carry left the other direction open: when
+        // the provider merged two cues, the line that lost its token was refused and the
+        // line that gained one was never scanned, so "__SF0__" went into the file. And
+        // nothing downstream would have caught it — MegaDictionary has no key with an
+        // underscore, fixGrammar's \p{L}+ does not match one, and renderSrt filters
+        // nothing. This also catches a half-chewed remnant, which no count check can see.
+        if (out.contains(PREFIX)) return null
         return out
     }
 

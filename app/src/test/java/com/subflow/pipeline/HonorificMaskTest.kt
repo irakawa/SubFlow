@@ -63,6 +63,36 @@ class HonorificMaskTest {
         assertNull(HonorificMask.restore(masked, 0, "$t ve $t için bekle."))
     }
 
+    // --- no line may leave with a token still in it ---
+
+    @Test
+    fun `a token that drifted onto another line is caught on both lines`() {
+        // the provider merged two cues: line 0 lost its token and line 1 gained one it
+        // never had. Verifying only the tokens a line was *expected* to carry meant the
+        // receiving line was never even scanned, and shipped with __SF0__ in it.
+        val masked = HonorificMask.mask(listOf("Hana-chan,", "Come here."))
+        val restored = HonorificMask.restoreAll(
+            masked,
+            listOf("", "${masked.token(0)}, buraya gel.")
+        )
+        assertEquals(listOf(0, 1), restored.lost)
+    }
+
+    @Test
+    fun `a half-chewed token leaves the line refused`() {
+        val masked = HonorificMask.mask(listOf("Wait for Akaishi-san.", "Come here."))
+        // the remnant is not a whole token, so no count check would ever see it
+        assertNull(HonorificMask.restore(masked, 1, "__SF buraya gel."))
+    }
+
+    @Test
+    fun `an unmasked batch is not scanned for tokens`() {
+        // when masking never ran, "__SF" in the text is the user's own and stays
+        val masked = HonorificMask.mask(listOf("Build __SF0__ failed."))
+        assertFalse(masked.active)
+        assertEquals("Yapı __SF0__ başarısız.", HonorificMask.restore(masked, 0, "Yapı __SF0__ başarısız."))
+    }
+
     // --- the per-line decision the pipeline acts on ---
 
     @Test
