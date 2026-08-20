@@ -35,13 +35,37 @@ package com.subflow.pipeline
  * the token is expected rather than assumed impossible — [restore] refuses the line and
  * the caller falls back to translating it unmasked, which is what used to happen anyway.
  *
- * ## Known limit
+ * ## What the provider does around the token
  *
- * Turkish vowel harmony on a suffix the provider attaches is decided by the token's
- * shape, not the real name: `__SF0__` draws back vowels, so a name ending in a front
- * vowel can come back as "Efe-san'dan" where "Efe-san'den" was wanted. The name and the
- * honorific are correct, which is the thing rule 4 asks for; one harmony error on an
- * attached suffix is a much smaller defect than "Osiramasama".
+ * Two things the restored line depends on, measured on both providers rather than
+ * assumed, EN→TR:
+ *
+ * ```
+ * "Are you talking about __SF0__?"  ->  __SF0__'dan mı bahsediyorsunuz?
+ * "I saw __SF0__ yesterday."        ->  Dün __SF0__'ı gördüm.
+ * "This is __SF0__'s book."         ->  Bu __SF0__'ın kitabı.
+ * "Give it to __SF0__."             ->  __SF0__'a ver.
+ * "I came with __SF0__."            ->  __SF0__ ile geldim.
+ * ```
+ *
+ * The case ending always arrives behind an apostrophe, which is what a Turkish proper
+ * noun needs: restoring gives "Hana-chan'ı", not "Hana-chandan". And a cue consisting
+ * of nothing but the token survives — `__SF0__!`, `__SF0__?`, `__SF0__...` and the bare
+ * token all came back 4/4 with the separator count intact, so a one-word vocative cue
+ * cannot collapse the batch into a provider failure.
+ *
+ * ## Known limits
+ *
+ * Turkish vowel harmony on that attached suffix is decided by the token's shape, not
+ * the real name: `__SF0__` draws back vowels, so a name ending in a front vowel can
+ * come back as "Efe-san'dan" where "Efe-san'den" was wanted. The name and the honorific
+ * are correct, which is the thing rule 4 asks for; one harmony error on an attached
+ * suffix is a much smaller defect than "Osiramasama".
+ *
+ * Only romaji is masked. A source written in Japanese script — 花ちゃん, 大将さま — is
+ * not matched by [namedHonorific] and goes to the provider unprotected, exactly as it
+ * did before this class existed. Covering it means recognising a name boundary without
+ * spaces or capitals, which is a different problem from this one.
  */
 internal object HonorificMask {
 
