@@ -53,13 +53,12 @@ class SceneParticipantTracker {
         // meant every source without one — English film, series, animation, most of what
         // this app is pointed at — resolved AMBIGUOUS forever and rule 3.2 never ran.
         //
-        // Absent a group cue, one addressee is the reading dialogue usually supports —
-        // but only a honorific ever *showed* it. The two are reported apart so the
-        // repairs can ask which one they are standing on.
+        // Absent a group cue, one addressee is the reading dialogue usually supports.
+        // A honorific makes that firmer, but nothing downstream treats the two cases
+        // differently any more, so they are not reported apart.
         return when {
             sinceGroup <= window -> Addressee(Plurality.AMBIGUOUS, formality)
-            honorific != null || sinceHonorific <= window -> Addressee(Plurality.SINGLE, formality)
-            else -> Addressee(Plurality.SINGLE_ASSUMED, formality)
+            else -> Addressee(Plurality.SINGLE, formality)
         }
     }
 }

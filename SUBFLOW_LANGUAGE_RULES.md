@@ -118,15 +118,24 @@ Sahnedeki katılımcı sayısı takip edilir (`SceneParticipantTracker`
 ve sahne katılımcı sayısı üzerinden hitap tekil mi çoğul mu
 belirlenir.
 
-**İki bağımsız katman:**
+**Bir onarım, bir veto:**
 
 ```
-KATMAN 1 — Açık grup/çoğul işaretleri
-"hepiniz", "herkes", "sizler", "tümünüz" gibi ifadeler tek kişiye
-hitapta ASLA doğru değildir — otorite/saygı/rütbe durumunda BİLE.
-Formaliteden tamamen bağımsız, her zaman uygulanır.
+VETO — Açık grup/çoğul işaretleri
+"hepiniz", "sizler", "ikiniz", "beyler", "çocuklar" gibi ifadeler
+satırın kendisinin bir kalabalığa seslendiğini söyler. Bu durumda
+HİÇBİR onarım uygulanmaz — kaynaktan çıkarılan hiçbir şey satırın
+kendi ifadesini geçersiz kılmaz.
 
-KATMAN 2 — Sen/Siz çekim tercihi
+Doküman daha önce burada bir KATMAN 1 tarif ediyordu: bu kelimeleri
+tekil zamire çeviren ("hepiniz" → "sen") ve "her zaman uygulanır"
+denen bir onarım. O katman kaldırıldı. Veto zaten aynı kelimelerin
+hepsini kapsıyordu, yani katman hiç çalışamıyordu; ayrıca yanlış
+olduğunda bedeli doğru bir çoğulu tekile çevirmekti. Tek kazancı
+makine çevirisinin yoktan uydurduğu bir grubu geri almaktı — nadir
+ve riski karşılamıyor.
+
+ONARIM — Sen/Siz çekim tercihi
 Bu katman SADECE formaliteye bakar:
   - RESMİ ilişki (-sama, -sensei, otorite/rütbe) → "siz" çekimi
     (sınız/siniz vb.) KORUNUR — tek kişiye saygıyla "siz" demek

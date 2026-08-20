@@ -3,17 +3,25 @@ package com.subflow.pipeline
 import java.util.Locale
 
 /**
- * fixes singular/plural address on a translated Turkish line, given who the line
- * is spoken to. two independent layers (see SUBFLOW_LANGUAGE_RULES 3.2):
+ * Fixes singular/plural address on a translated Turkish line (SUBFLOW_LANGUAGE_RULES
+ * 3.2), given who the line is spoken to.
  *
- *   LAYER 1 — explicit group words ("hepiniz", "sizler", "tümünüz") are never
- *   right for one person, even a respected one, so they always get pulled back
- *   to a singular pronoun.
+ * One repair and one veto.
  *
- *   LAYER 2 — the sen/siz verb ending only depends on formality. Speaking
- *   formally to one person ("siz gelmişsiniz") is correct Turkish and is left
- *   alone. Only a casual 1:1 line that came back with a stray plural ending gets
- *   singularized ("gelmişsiniz" -> "gelmişsin").
+ *   The repair is the sen/siz verb ending, and it only depends on formality. Speaking
+ *   formally to one person ("siz gelmişsiniz") is correct Turkish and is left alone;
+ *   only a casual 1:1 line that came back with a stray plural ending is singularized
+ *   ("gelmişsiniz" -> "gelmişsin").
+ *
+ *   The veto is the line's own plural marking. If the Turkish says "Beyler" or
+ *   "Hepiniz", it is addressing a crowd and nothing we inferred from the source
+ *   outranks that.
+ *
+ * There used to be a second repair that rewrote an explicit group word into a singular
+ * pronoun ("hepiniz" -> "sen"). The veto covers every word it acted on, so it could
+ * never run; it is gone rather than left as an unreachable branch. Its only value was
+ * undoing a group the machine translator invented out of nothing, which is rare, and
+ * the cost of being wrong was rewriting a correct plural into a singular.
  *
  * name-agnostic: it works off the resolved [Addressee], not any character.
  */
@@ -22,60 +30,14 @@ object GrammarFixer {
     private val tr = Locale("tr")
 
     fun fix(line: String, addressee: Addressee): String {
-        val evidenced = addressee.plurality == Plurality.SINGLE
-        val assumed = addressee.plurality == Plurality.SINGLE_ASSUMED
-        if (!evidenced && !assumed) return line // group / ambiguous is left as is
-        // Whichever branch we are on, the line itself gets the last word. A honorific
-        // says the speaker is on familiar terms with someone; it does not say that this
-        // Turkish sentence is addressed to one person, and "Beyler, geç kaldınız." says
-        // it is not. Asking only on the assumed branch meant every honorific-bearing
-        // file — anime, the corpus this rule was written for — kept singularising real
-        // plurals for four lines after each honorific.
+        if (addressee.plurality != Plurality.SINGLE) return line // group / ambiguous
+        // the line itself gets the last word. A honorific says the speaker is on
+        // familiar terms with someone; it does not say that this Turkish sentence is
+        // addressed to one person, and "Beyler, geç kaldınız." says it is not.
         if (AddresseeAnalyzer.hasPluralAddress(line)) return line
-        val formal = addressee.formality == Formality.FORMAL
-
-        // LAYER 1 rewrites "hepiniz" as "sen", which asserts there is one person. Only
-        // evidence licenses that; on an assumption it would be the app inventing the
-        // scene rather than repairing the translation of it.
-        //
-        // Note that the veto above now subsumes this: every word in [groupWords] is also
-        // explicit plural marking, so a line that would reach LAYER 1 is stopped before
-        // it. Kept rather than deleted because it is the veto list that decides that,
-        // and narrowing the veto would put these back in play.
-        var out = if (evidenced) fixGroupMarkers(line, formal) else line
-        if (!formal) out = singularizeVerbs(out) // LAYER 2, casual/unknown only
-        return out
+        if (addressee.formality == Formality.FORMAL) return line // "siz" is the respect
+        return singularizeVerbs(line)
     }
-
-    /** the singular a group word collapses to, informal and formal variants. */
-    private data class Pronoun(val informal: String, val formal: String)
-
-    // "herkes" is intentionally absent: it is usually a real "everyone" subject,
-    // not a second-person address, and rewriting it would corrupt correct lines.
-    private val groupWords: Map<String, Pronoun> = mapOf(
-        "hepiniz" to Pronoun("sen", "siz"),
-        "hepinize" to Pronoun("sana", "size"),
-        "hepinizi" to Pronoun("seni", "sizi"),
-        "hepinizin" to Pronoun("senin", "sizin"),
-        "sizler" to Pronoun("sen", "siz"),
-        "sizlere" to Pronoun("sana", "size"),
-        "sizleri" to Pronoun("seni", "sizi"),
-        "sizlerin" to Pronoun("senin", "sizin"),
-        "tümünüz" to Pronoun("sen", "siz"),
-        "tümünüze" to Pronoun("sana", "size"),
-        "tümünüzü" to Pronoun("seni", "sizi")
-    )
-
-    private val groupWordRegex = Regex(
-        """\b(${groupWords.keys.joinToString("|")})\b""",
-        RegexOption.IGNORE_CASE
-    )
-
-    private fun fixGroupMarkers(line: String, formal: Boolean): String =
-        groupWordRegex.replace(line) { m ->
-            val p = groupWords[m.value.lowercase(tr)] ?: return@replace m.value
-            preserveCase(m.value, if (formal) p.formal else p.informal)
-        }
 
     // second-person-plural verb endings. each is the singular ending plus the
     // plural marker (vowel + z), so dropping the last two chars restores the
@@ -209,10 +171,8 @@ object GrammarFixer {
         translated: String,
         addressee: Addressee
     ): String {
-        val evidenced = addressee.plurality == Plurality.SINGLE
-        val assumed = addressee.plurality == Plurality.SINGLE_ASSUMED
-        if (!evidenced && !assumed) return translated
-        // same rule as [fix]: the line's own plural marking outranks either branch
+        if (addressee.plurality != Plurality.SINGLE) return translated
+        // same rule as [fix]: the line's own plural marking outranks what we inferred
         if (AddresseeAnalyzer.hasPluralAddress(translated)) return translated
         if (addressee.formality == Formality.FORMAL) return translated // "siz" is the respect
         if (sourceLang.lowercase(Locale.ROOT) !in englishTags) return translated
@@ -287,14 +247,6 @@ object GrammarFixer {
         val first = tokens.firstOrNull { it !in imperativeFillers } ?: return false
         return first in imperativeVerbs
     }
-
-    /** copies the first-letter casing of [original] onto [replacement]. */
-    private fun preserveCase(original: String, replacement: String): String =
-        if (original.firstOrNull()?.isUpperCase() == true) {
-            replacement.replaceFirstChar { it.titlecase(tr) }
-        } else {
-            replacement
-        }
 
     // --- SUBFLOW_LANGUAGE_RULES 3.3: unnecessary "mı/mi" question particle ---
 

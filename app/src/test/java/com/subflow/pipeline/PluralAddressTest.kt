@@ -63,7 +63,7 @@ class PluralAddressTest {
     @Test
     fun `an unmarked line is single only by assumption`() {
         val t = SceneParticipantTracker()
-        assertEquals(Plurality.SINGLE_ASSUMED, t.next("Stay where you are.").plurality)
+        assertEquals(Plurality.SINGLE, t.next("Stay where you are.").plurality)
     }
 
     @Test

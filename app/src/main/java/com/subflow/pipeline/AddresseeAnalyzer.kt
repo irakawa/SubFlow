@@ -6,13 +6,13 @@ enum class Formality { FORMAL, INFORMAL, UNKNOWN }
 /**
  * how many people a line is spoken to.
  *
- * [SINGLE] and [SINGLE_ASSUMED] are deliberately different. The first was shown — a
- * honorific anchors a one-to-one exchange. The second is what an unmarked line defaults
- * to, and a default must not license the same rewrites as a fact: collapsing "hepiniz"
- * into "sen" claims to know there is one person, and assuming it is how
- * "Hepiniz tutuklusunuz." became "Hepiniz tutuklusun."
+ * [SINGLE] covers both a honorific that showed a one-to-one exchange and an unmarked
+ * line that defaults to one. They were separate values for a while, so that the
+ * evidenced case could license a rewrite the assumed case could not — but the rewrite
+ * in question is gone and no caller distinguishes them any more. A distinction nothing
+ * reads is a distinction that will drift out of true, so it is one value again.
  */
-enum class Plurality { SINGLE, SINGLE_ASSUMED, GROUP, AMBIGUOUS }
+enum class Plurality { SINGLE, GROUP, AMBIGUOUS }
 
 /** the resolved addressee for one line: how many, and how formally. */
 data class Addressee(val plurality: Plurality, val formality: Formality)

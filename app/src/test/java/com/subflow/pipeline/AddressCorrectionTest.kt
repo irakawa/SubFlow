@@ -69,24 +69,24 @@ class AddressCorrectionTest {
     }
 
     @Test
-    fun `unmarked line with no anchor addresses one person by assumption`() {
+    fun `unmarked line with no anchor addresses one person`() {
         // AMBIGUOUS here is what kept rule 3.2 from ever running on a source without a
-        // honorific, so an unmarked line does resolve to one addressee — but as an
-        // assumption, which licenses fewer rewrites than the evidenced SINGLE above.
+        // honorific, so an unmarked line resolves to one addressee. A honorific makes
+        // that firmer, but nothing downstream reads the difference, so it is not
+        // reported as a separate value.
         val t = SceneParticipantTracker()
         val a = t.next("The weather is nice today.")
-        assertEquals(Plurality.SINGLE_ASSUMED, a.plurality)
+        assertEquals(Plurality.SINGLE, a.plurality)
         assertEquals(Formality.UNKNOWN, a.formality)
     }
 
-    // --- GrammarFixer: LAYER 1 (group markers) vs the line's own plural marking ---
+    // --- the line's own plural marking vetoes every repair ---
 
     @Test
     fun `the line's plural marking outranks any addressee we resolved`() {
-        // these two used to expect "Sen gel." and "Siz gelin.". Layer 1 rewrites an
-        // explicit group word into a singular pronoun on the strength of what the
-        // *source* implied, and the word it rewrites is itself the clearest statement
-        // that this is a crowd. When the two disagree the line wins, on either branch.
+        // these two used to expect "Sen gel." and "Siz gelin." from a rewrite that
+        // turned an explicit group word into a singular pronoun. That rewrite is gone:
+        // the word it acted on is itself the clearest statement that this is a crowd.
         val informal = Addressee(Plurality.SINGLE, Formality.INFORMAL)
         assertEquals("Hepiniz gel.", GrammarFixer.fix("Hepiniz gel.", informal))
         assertEquals("sizlere söyledim", GrammarFixer.fix("sizlere söyledim", informal))
