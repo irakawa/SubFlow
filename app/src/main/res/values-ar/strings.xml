@@ -120,11 +120,11 @@
     <string name="log_whisper_fail">فشل النسخ</string>
     <string name="log_whisper_too_long">مدة الصوت %1$d دقيقة، وهذا الجهاز يدعم حتى %2$d دقيقة — تم التخطي</string>
     <string name="log_audio_extracting">استخراج الصوت من البث عبر ffmpeg…</string>
-    <string name="log_vad_start">مزامنة VAD: تحليل الصوت (نوافذ 10 مللي ثانية)…</string>
-    <string name="log_vad_applied">مزامنة VAD: طُبِّق إزاحة %1$+d مللي ثانية (ثقة %2$d%%)</string>
-    <string name="log_vad_scale">مزامنة VAD: اكتُشف مقياس معدل الإطارات %1$.4f</string>
-    <string name="log_vad_aligned">مزامنة VAD: متزامن بالفعل (ثقة %1$d%%)</string>
+    <string name="log_vad_start">VAD: قياس الصوت مقابل الجُمل (نوافذ 10 مللي ثانية)…</string>
+    <string name="log_vad_scale">VAD: مقياس معدل الإطارات %1$.4f مقترح (لم يُطبَّق)</string>
     <string name="log_vad_fail">مزامنة VAD دون عتبة الثقة — الإبقاء على النتيجة التقريبية</string>
+    <string name="log_vad_consistent">VAD: التوقيت يبدو متسقًا مع الصوت (تداخل %1$d%%) — لم يتغير شيء</string>
+    <string name="log_vad_observed">VAD: انزياح مقيس %1$+dms، تداخل %2$d%% — ملاحظة فقط، لم يُغيَّر التوقيت</string>
     <string name="log_method_human">ترجمة بشرية</string>
     <string name="log_method_mt">ترجمة آلية + معالجة (%1$s←%2$s)</string>
     <string name="log_method_mt_raw">ترجمة آلية خام (%1$s→%2$s)</string>

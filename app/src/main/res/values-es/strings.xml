@@ -120,11 +120,11 @@
     <string name="log_whisper_fail">La transcripción falló</string>
     <string name="log_whisper_too_long">El audio dura %1$d min, este dispositivo admite hasta %2$d min — omitido</string>
     <string name="log_audio_extracting">Extrayendo audio del stream con ffmpeg…</string>
-    <string name="log_vad_start">VAD sync: analizando audio (ventanas de 10ms)…</string>
-    <string name="log_vad_applied">VAD sync: offset de %1$+dms aplicado (confianza %2$d%%)</string>
-    <string name="log_vad_scale">VAD sync: escala de framerate %1$.4f detectada</string>
-    <string name="log_vad_aligned">VAD sync: ya alineado (confianza %1$d%%)</string>
+    <string name="log_vad_start">VAD: midiendo el audio frente a los subtítulos (ventanas de 10ms)…</string>
+    <string name="log_vad_scale">VAD: escala de framerate %1$.4f sugerida (no aplicada)</string>
     <string name="log_vad_fail">VAD sync bajo el umbral de confianza — se mantiene la heurística</string>
+    <string name="log_vad_consistent">VAD: el tiempo parece coherente con el audio (%1$d%% de solape) — sin cambios</string>
+    <string name="log_vad_observed">VAD: desfase medido de %1$+dms, %2$d%% de solape — solo observación, no se cambió el tiempo</string>
     <string name="log_method_human">Traducción humana</string>
     <string name="log_method_mt">TA + posprocesador (%1$s→%2$s)</string>
     <string name="log_method_mt_raw">Traducción automática sin procesar (%1$s→%2$s)</string>

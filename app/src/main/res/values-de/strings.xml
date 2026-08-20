@@ -120,11 +120,11 @@
     <string name="log_whisper_fail">Transkription fehlgeschlagen</string>
     <string name="log_whisper_too_long">Audio ist %1$d Min, dieses Gerät schafft höchstens %2$d Min — übersprungen</string>
     <string name="log_audio_extracting">Audio wird per ffmpeg extrahiert…</string>
-    <string name="log_vad_start">VAD-Sync: Audio wird analysiert (10-ms-Fenster)…</string>
-    <string name="log_vad_applied">VAD-Sync: %1$+dms Offset angewandt (Konfidenz %2$d%%)</string>
-    <string name="log_vad_scale">VAD-Sync: Framerate-Skala %1$.4f erkannt</string>
-    <string name="log_vad_aligned">VAD-Sync: bereits synchron (Konfidenz %1$d%%)</string>
+    <string name="log_vad_start">VAD: Ton wird gegen die Cues gemessen (10ms-Fenster)…</string>
+    <string name="log_vad_scale">VAD: Framerate-Faktor %1$.4f vorgeschlagen (nicht angewendet)</string>
     <string name="log_vad_fail">VAD-Sync unter Konfidenzschwelle — heuristisches Ergebnis bleibt</string>
+    <string name="log_vad_consistent">VAD: Timing wirkt stimmig zum Ton (%1$d%% Überlappung) — nichts geändert</string>
+    <string name="log_vad_observed">VAD: %1$+dms Versatz gemessen, %2$d%% Überlappung — nur Beobachtung, Timing unverändert</string>
     <string name="log_method_human">Menschliche Übersetzung</string>
     <string name="log_method_mt">MT + Post-Processor (%1$s→%2$s)</string>
     <string name="log_method_mt_raw">Reine Maschinenübersetzung (%1$s→%2$s)</string>

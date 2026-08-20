@@ -120,11 +120,11 @@
     <string name="log_whisper_fail">Transkripsiyon başarısız</string>
     <string name="log_whisper_too_long">Ses %1$d dk, bu cihaz en fazla %2$d dk deşifre edebilir — atlandı</string>
     <string name="log_audio_extracting">ffmpeg stream\'den ses çıkarılıyor…</string>
-    <string name="log_vad_start">VAD sync: ses analiz ediliyor (10ms pencereler)…</string>
-    <string name="log_vad_applied">VAD sync: %1$+dms offset uygulandı (güven %%%2$d)</string>
-    <string name="log_vad_scale">VAD sync: framerate ölçeği %1$.4f tespit edildi</string>
-    <string name="log_vad_aligned">VAD sync: zaten hizalı (güven %%%1$d)</string>
+    <string name="log_vad_start">VAD: ses altyazıya karşı ölçülüyor (10ms pencereler)…</string>
+    <string name="log_vad_scale">VAD: %1$.4f framerate ölçeği öneriliyor (uygulanmadı)</string>
     <string name="log_vad_fail">VAD sync güven eşiğini geçemedi — heuristik sonuç korundu</string>
+    <string name="log_vad_consistent">VAD: zamanlama sesle tutarlı görünüyor (%%%1$d örtüşme) — hiçbir şey değiştirilmedi</string>
+    <string name="log_vad_observed">VAD: %1$+dms kayma ölçüldü, %%%2$d örtüşme — yalnızca gözlem, zamanlama değiştirilmedi</string>
     <string name="log_method_human">İnsan çevirisi</string>
     <string name="log_method_mt">MT + Post-processor (%1$s→%2$s)</string>
     <string name="log_method_mt_raw">Ham makine çevirisi (%1$s→%2$s)</string>

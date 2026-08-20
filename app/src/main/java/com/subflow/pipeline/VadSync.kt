@@ -175,7 +175,14 @@ object VadSync {
             ((b[off + 2].toInt() and 0xFF) shl 16) or
             ((b[off + 3].toInt() and 0xFF) shl 24)
 
-    /** apply the offset + scale to the SRT content */
+    /**
+     * Apply the offset + scale to the SRT content.
+     *
+     * Intentionally unused right now: PipelineRunner.withVadObservation explains why a
+     * reading is not acted on while [align]'s confidence is a measure of the audio's
+     * speech density rather than of agreement. Kept because it is correct in itself and
+     * is what the pipeline will call again once that statistic is replaced.
+     */
     fun apply(content: String, result: SyncResult): String {
         val cues = SyncEngine.parseSrt(content).map {
             it.copy(

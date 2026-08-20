@@ -653,34 +653,47 @@ object PipelineRunner {
                 val confPct = (aligned.confidence * 100).toInt()
                 if (VadSync.isSignificant(aligned)) {
                     if (abs(aligned.scaleFactor - 1.0) > 0.001) {
-                        log(LogLevel.OK, L10n.t(R.string.log_vad_scale, aligned.scaleFactor))
+                        log(LogLevel.INFO, L10n.t(R.string.log_vad_scale, aligned.scaleFactor))
                     }
-                    log(LogLevel.OK, L10n.t(R.string.log_vad_applied, aligned.offsetMs, confPct))
-                    results[i] = results[i].copy(
-                        content = VadSync.apply(results[i].content, aligned),
-                        syncWarning = null,
-                        // measured a real drift and corrected it, nudge by measured confidence.
-                        // timing says nothing about which episode this is, so an unconfirmed
-                        // one keeps its cap
-                        qualityScore = Quality.episodeAwareSync(
-                            results[i].qualityScore, confPct, results[i].episodeVerified
-                        )
-                    )
+                    log(LogLevel.INFO, L10n.t(R.string.log_vad_observed, aligned.offsetMs, confPct))
                 } else {
-                    log(LogLevel.OK, L10n.t(R.string.log_vad_aligned, confPct))
-                    results[i] = results[i].copy(
-                        syncWarning = null,
-                        // already well-aligned against the audio, same nudge and same cap
-                        qualityScore = Quality.episodeAwareSync(
-                            results[i].qualityScore, confPct, results[i].episodeVerified
-                        )
-                    )
+                    log(LogLevel.INFO, L10n.t(R.string.log_vad_consistent, confPct))
                 }
+                results[i] = withVadObservation(results[i], confPct)
             }
         } finally {
             wav.delete()
         }
     }
+
+    /**
+     * What a VAD reading is allowed to change. Deliberately almost nothing.
+     *
+     * [VadSync.overlapScore] divides by the subtitle's own speech frames and never counts
+     * the audio side, so its floor is the audio's speech density rather than zero, and
+     * [VadSync.align] takes the maximum over roughly eighteen thousand offsets against a
+     * fixed 0.55 gate. Measured on a 24-minute timeline, a completely unrelated subtitle
+     * scores 0.595 where the audio is 54% speech and 0.892 where it is 88%: the gate is a
+     * gate on density, not on agreement, and it clears for the wrong episode.
+     *
+     * Until that statistic is replaced with one that is normalised against its own
+     * baseline, a reading is an observation and nothing more:
+     *
+     *  - the timings are not rewritten. The scale factors that came back in those
+     *    measurements were 1.0427 and 0.9590, and applying either to a 24-minute episode
+     *    drags the last cue about a minute off. Correct timing was being broken on the
+     *    strength of a number that does not mean what it looks like.
+     *  - the sync warning is not retracted. SyncEngine's "release tags don't match,
+     *    check this" is the one honest warning the pipeline produces, and an unreliable
+     *    correlation is not grounds to withdraw it.
+     *
+     * The score nudge stays. It is bounded to +1..+10 and [Quality.episodeAwareSync]
+     * already refuses to lift a result whose episode nothing confirmed.
+     */
+    internal fun withVadObservation(result: SubtitleResult, confPct: Int): SubtitleResult =
+        result.copy(
+            qualityScore = Quality.episodeAwareSync(result.qualityScore, confPct, result.episodeVerified)
+        )
 
     /** whisper flow: if the model is missing, ask consent, download, then transcribe. */
     private suspend fun whisperPath(context: Context, release: Release): String? {
