@@ -121,6 +121,31 @@ object GrammarFixer {
     private const val MIN_STEM = 3
 
     /**
+     * Whole words that parse two ways, and so are settled by neither list.
+     *
+     * A vowel-final noun takes the same second-person-plural possessive that a
+     * consonant-final verb stem takes as an imperative, and the two land on the same
+     * spelling: "sor|unuz" is an order, "soru|nuz" is your question. Checking the stem
+     * only ever sees the first parse, and the stem it sees is a real verb, so every
+     * guard passes and the noun loses its ending. "Dinleyin. Sorunuz." became
+     * "Dinleyin. Sor.".
+     *
+     * Seven collisions between this rule's stems and everyday nouns: soru, yazı, görü,
+     * gösteri, veri, sürü, and düş, which is spelled the same either way. For these the
+     * question is asked of the whole word instead, and the whole word cannot answer it,
+     * so the rule declines.
+     */
+    private val ambiguousImperatives = setOf(
+        "sorunuz",    // sor + unuz  /  soru + nuz
+        "yazınız",    // yaz + ınız  /  yazı + nız
+        "görünüz",    // gör + ünüz  /  görü + nüz
+        "gösteriniz", // göster + iniz  /  gösteri + niz
+        "veriniz",    // ver + iniz  /  veri + niz
+        "sürünüz",    // sür + ünüz  /  sürü + nüz
+        "düşünüz"     // düş + ünüz either way: fall, or your dream
+    )
+
+    /**
      * Turkish verb stems this rule is willing to produce.
      *
      * The last guess left. Everything else about the word can look right — an English
@@ -140,8 +165,11 @@ object GrammarFixer {
         "dön", "düş", "atla", "sar", "sil", "temizle", "hazırla", "düşün", "inan",
         "güven", "affet", "açıkla", "tekrarla", "seç", "öde", "say", "dokun", "eğil",
         "tırman", "taşı", "kaldır", "sür", "imzala", "giy", "yıka", "örtün", "göster",
-        "ateş", "nişan", "sakin", "rahatla", "acele", "yardım", "devam", "dikkat",
-        "izin", "buyur", "gel", "geç", "kork", "sus", "bağır", "fısılda", "gül",
+        // ateş, nişan, sakin, acele, yardım, devam, dikkat and izin used to be here.
+        // They are nouns: the order is "yardım et", "dikkat et". None of them forms an
+        // imperative alone, so they could never repair anything and could only ever
+        // agree to cut a noun.
+        "rahatla", "buyur", "geç", "kork", "sus", "bağır", "fısılda", "gül",
         "ağla", "otur", "yat", "kaybol", "defol", "sakla", "koru", "kurtar", "öldür",
         "vur", "savaş", "dövüş", "yakala", "bul", "ara", "topla", "böl", "kes"
     )
@@ -201,6 +229,9 @@ object GrammarFixer {
             // only a bare suffix can be the predicate's; with a y buffer it cannot be
             buffer.isEmpty() && last in predicateConsonant -> return translated
             last in softenedFinal -> return translated
+            // the whole word first: for the collisions it is the only level that can
+            // see both parses, and a word that parses two ways settles nothing
+            verb.value.lowercase(tr) in ambiguousImperatives -> return translated
             // and finally: is what we are about to write even a verb?
             stem.lowercase(tr) !in turkishVerbStems -> return translated
             else -> stem
