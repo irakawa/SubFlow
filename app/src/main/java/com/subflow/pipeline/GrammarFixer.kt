@@ -22,11 +22,18 @@ object GrammarFixer {
     private val tr = Locale("tr")
 
     fun fix(line: String, addressee: Addressee): String {
-        // only correct when we're sure it's one person. group / ambiguous is left as is.
-        if (addressee.plurality != Plurality.SINGLE) return line
+        val evidenced = addressee.plurality == Plurality.SINGLE
+        val assumed = addressee.plurality == Plurality.SINGLE_ASSUMED
+        if (!evidenced && !assumed) return line // group / ambiguous is left as is
+        // an assumption yields to what the line itself says: "Beyler, geç kaldınız."
+        // is a crowd whatever the source did or didn't manage to say
+        if (assumed && AddresseeAnalyzer.hasPluralAddress(line)) return line
         val formal = addressee.formality == Formality.FORMAL
 
-        var out = fixGroupMarkers(line, formal) // LAYER 1, always
+        // LAYER 1 rewrites "hepiniz" as "sen", which asserts there is one person. Only
+        // evidence licenses that; on an assumption it would be the app inventing the
+        // scene rather than repairing the translation of it.
+        var out = if (evidenced) fixGroupMarkers(line, formal) else line
         if (!formal) out = singularizeVerbs(out) // LAYER 2, casual/unknown only
         return out
     }
@@ -139,7 +146,10 @@ object GrammarFixer {
         translated: String,
         addressee: Addressee
     ): String {
-        if (addressee.plurality != Plurality.SINGLE) return translated
+        val evidenced = addressee.plurality == Plurality.SINGLE
+        val assumed = addressee.plurality == Plurality.SINGLE_ASSUMED
+        if (!evidenced && !assumed) return translated
+        if (assumed && AddresseeAnalyzer.hasPluralAddress(translated)) return translated
         if (addressee.formality == Formality.FORMAL) return translated // "siz" is the respect
         if (sourceLang.lowercase(Locale.ROOT) !in englishTags) return translated
         if (possessiveSource.containsMatchIn(source)) return translated

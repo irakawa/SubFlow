@@ -52,11 +52,14 @@ class SceneParticipantTracker {
         // and only the second one needs a honorific. Tying plurality to the honorific
         // meant every source without one — English film, series, animation, most of what
         // this app is pointed at — resolved AMBIGUOUS forever and rule 3.2 never ran.
-        // Absent an explicit group cue, one addressee is the reading dialogue supports.
-        return if (sinceGroup > window) {
-            Addressee(Plurality.SINGLE, formality)
-        } else {
-            Addressee(Plurality.AMBIGUOUS, formality)
+        //
+        // Absent a group cue, one addressee is the reading dialogue usually supports —
+        // but only a honorific ever *showed* it. The two are reported apart so the
+        // repairs can ask which one they are standing on.
+        return when {
+            sinceGroup <= window -> Addressee(Plurality.AMBIGUOUS, formality)
+            honorific != null || sinceHonorific <= window -> Addressee(Plurality.SINGLE, formality)
+            else -> Addressee(Plurality.SINGLE_ASSUMED, formality)
         }
     }
 }

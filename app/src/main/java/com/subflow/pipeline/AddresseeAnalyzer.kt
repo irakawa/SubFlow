@@ -3,8 +3,16 @@ package com.subflow.pipeline
 /** how formal the speaker is toward the person they address. */
 enum class Formality { FORMAL, INFORMAL, UNKNOWN }
 
-/** how many people a line is spoken to. */
-enum class Plurality { SINGLE, GROUP, AMBIGUOUS }
+/**
+ * how many people a line is spoken to.
+ *
+ * [SINGLE] and [SINGLE_ASSUMED] are deliberately different. The first was shown — a
+ * honorific anchors a one-to-one exchange. The second is what an unmarked line defaults
+ * to, and a default must not license the same rewrites as a fact: collapsing "hepiniz"
+ * into "sen" claims to know there is one person, and assuming it is how
+ * "Hepiniz tutuklusunuz." became "Hepiniz tutuklusun."
+ */
+enum class Plurality { SINGLE, SINGLE_ASSUMED, GROUP, AMBIGUOUS }
 
 /** the resolved addressee for one line: how many, and how formally. */
 data class Addressee(val plurality: Plurality, val formality: Formality)
@@ -19,6 +27,8 @@ data class Addressee(val plurality: Plurality, val formality: Formality)
  */
 object AddresseeAnalyzer {
 
+    private val tr = java.util.Locale("tr")
+
     // any word glued to a japanese honorific, e.g. "Akaishi-san", "Naruto-kun".
     private val honorific = Regex(
         """\w+[-\s](san|kun|chan|sama|senpai|sensei|dono)\b""",
@@ -32,12 +42,50 @@ object AddresseeAnalyzer {
         RegexOption.IGNORE_CASE
     )
 
-    // english phrases that only make sense addressing more than one person. these are
-    // unambiguous: "you all" is never anything but a group being spoken to.
+    // english phrases that only make sense addressing more than one person. liberal by
+    // design, and that design only holds while a miss here cannot corrupt a line: the
+    // caller must treat "no group phrase matched" as unproven, never as singular.
     private val groupAddress = Regex(
-        """\b(you all|all of you|you guys|you two|you three|you both|both of you|the two of you|you people|you lot|y'all)\b""",
+        """\b(you all|all of you|you guys|you two|you three|you both|both of you|""" +
+            """the two of you|you people|you lot|y'all|""" +
+            """you(?:'re| are) all|you all are|""" +
+            """(?:two|three|four|five|six|seven|eight|nine|ten|all|any|none|some|each|""" +
+            """both|several|many|most) of you|""" +
+            """gentlemen|ladies|guys|folks|boys|girls|kids|children|comrades|soldiers)\b""",
         RegexOption.IGNORE_CASE
     )
+
+    /**
+     * Explicit second-person-plural marking in the *Turkish* line.
+     *
+     * The strongest evidence about how many people are addressed is often in the line
+     * being rewritten, not in the source: "Hepiniz tutuklusunuz." and "Beyler, geç
+     * kaldınız." say plainly that this is a crowd, and no English phrase had to survive
+     * translation for them to say it. Read as a veto only — it stops a repair, never
+     * starts one — so a false positive costs an unrepaired line and nothing worse.
+     */
+    private val turkishPluralAddress = listOf(
+        // second-person-plural pronouns and quantifiers
+        "hepiniz", "sizler", "tümünüz", "ikiniz", "üçünüz", "dördünüz", "beşiniz",
+        "hiçbiriniz", "biriniz", "herbiriniz", "çoğunuz", "bazılarınız", "kiminiz",
+        "hanginiz", "kaçınız",
+        // plural vocatives
+        "beyler", "baylar", "hanımlar", "bayanlar", "beyefendiler", "hanımefendiler",
+        "çocuklar", "arkadaşlar", "dostlar", "gençler", "askerler", "kardeşler"
+    ).map { TextMatch.wordStart(it) }
+
+    /**
+     * true when the Turkish line marks its addressee as plural in so many words.
+     *
+     * Matched against the Turkish-locale lowercasing rather than with IGNORE_CASE:
+     * the JVM's case-insensitive flag is ASCII-only unless UNICODE_CASE goes with it,
+     * so "Çocuklar" would not have matched "çocuklar", and ROOT lowercasing turns "İ"
+     * into i plus a combining dot, which matches nothing.
+     */
+    fun hasPluralAddress(turkishLine: String): Boolean {
+        val lower = turkishLine.lowercase(tr)
+        return turkishPluralAddress.any { it.containsMatchIn(lower) }
+    }
 
     /**
      * "everyone"/"everybody" only counts when it is being spoken *to*, not talked about.

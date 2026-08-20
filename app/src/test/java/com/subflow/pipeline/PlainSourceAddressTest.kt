@@ -23,7 +23,8 @@ class PlainSourceAddressTest {
     fun `a plain english line resolves to a single addressee`() {
         val t = SceneParticipantTracker()
         val a = t.next("Stay where you are.")
-        assertEquals(Plurality.SINGLE, a.plurality)
+        // assumed, not shown: nothing in the line said how many people are listening
+        assertEquals(Plurality.SINGLE_ASSUMED, a.plurality)
         // nothing said how formal the speaker is, and nothing should be invented
         assertEquals(Formality.UNKNOWN, a.formality)
     }
@@ -32,7 +33,7 @@ class PlainSourceAddressTest {
     fun `a whole plain scene keeps resolving single`() {
         val t = SceneParticipantTracker()
         for (line in listOf("Don't move.", "Are you listening to me?", "Put it down.", "Now.")) {
-            assertEquals(line, Plurality.SINGLE, t.next(line).plurality)
+            assertEquals(line, Plurality.SINGLE_ASSUMED, t.next(line).plurality)
         }
     }
 
@@ -59,7 +60,7 @@ class PlainSourceAddressTest {
         val t = SceneParticipantTracker()
         t.next("All of you, get out.")
         repeat(4) { assertEquals(Plurality.AMBIGUOUS, t.next("Move.").plurality) }
-        assertEquals(Plurality.SINGLE, t.next("Move.").plurality)
+        assertEquals(Plurality.SINGLE_ASSUMED, t.next("Move.").plurality)
     }
 
     // --- "everyone" means two different things and only one of them is a group address ---
