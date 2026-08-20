@@ -135,6 +135,26 @@ internal object HonorificMask {
         return out
     }
 
+    /** [lines] with names put back, and the indices [restore] refused. */
+    data class Restored(val lines: List<String>, val lost: List<Int>)
+
+    /**
+     * Restores a whole batch and says which lines could not be.
+     *
+     * The caller retranslates the reported indices unmasked and keeps the rest, so this
+     * is where "did this line survive" is decided — once, here, rather than again in the
+     * caller where no test would reach it.
+     */
+    fun restoreAll(masked: Masked, translated: List<String>): Restored {
+        val out = translated.toMutableList()
+        val lost = mutableListOf<Int>()
+        for (i in translated.indices) {
+            val restored = restore(masked, i, translated[i])
+            if (restored == null) lost += i else out[i] = restored
+        }
+        return Restored(out, lost)
+    }
+
     private fun String.occurrencesOf(token: String): Int {
         var from = 0
         var found = 0

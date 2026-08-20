@@ -109,6 +109,7 @@
     <string name="log_batch_progress">Çeviri: %1$d/%2$d batch</string>
     <string name="log_translate_done">Çeviri + post-processing tamamlandı (%1$d cue)</string>
     <string name="log_batches_failed">%1$d batch çevrilemedi, orijinal bırakıldı</string>
+    <string name="log_honorific_lost">Sağlayıcı %1$d korunan ismi geri döndürmedi — o satırlar korumasız yeniden çevriliyor</string>
     <string name="log_whisper_no_native">Whisper native kütüphanesi bu build\'de yok — transkripsiyon atlanıyor</string>
     <string name="log_whisper_need_model">Transkripsiyon için ~%1$dMB model gerekiyor — onay bekleniyor</string>
     <string name="log_whisper_denied">Model indirme reddedildi — pipeline durduruluyor</string>

@@ -63,6 +63,37 @@ class HonorificMaskTest {
         assertNull(HonorificMask.restore(masked, 0, "$t ve $t için bekle."))
     }
 
+    // --- the per-line decision the pipeline acts on ---
+
+    @Test
+    fun `a batch reports exactly which lines lost their token`() {
+        // the pipeline retranslates the reported indices unmasked and keeps the rest.
+        // Deciding that here rather than in the caller is the point: it is the only
+        // version of the decision, and it is the tested one.
+        val masked = HonorificMask.mask(
+            listOf("Hana-chan is here.", "Wait for Akaishi-san.", "Nothing to mask.")
+        )
+        val (restored, lost) = HonorificMask.restoreAll(
+            masked,
+            listOf(
+                "${masked.token(0)} burada.",   // came back clean
+                "Bekle.",                        // provider ate the token
+                "Maskelenecek bir şey yok."      // never had one
+            )
+        )
+        assertEquals(listOf(1), lost)
+        assertEquals("Hana-chan burada.", restored[0])
+        assertEquals("Maskelenecek bir şey yok.", restored[2])
+    }
+
+    @Test
+    fun `a clean batch reports nothing lost`() {
+        val masked = HonorificMask.mask(listOf("Hana-chan is here."))
+        val (restored, lost) = HonorificMask.restoreAll(masked, listOf("${masked.token(0)} burada."))
+        assertTrue(lost.isEmpty())
+        assertEquals("Hana-chan burada.", restored[0])
+    }
+
     // --- batch behaviour ---
 
     @Test

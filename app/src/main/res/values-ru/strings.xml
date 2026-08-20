@@ -109,6 +109,7 @@
     <string name="log_batch_progress">Перевод: пакет %1$d/%2$d</string>
     <string name="log_translate_done">Перевод + постобработка завершены (%1$d реплик)</string>
     <string name="log_batches_failed">%1$d пакетов не переведено, оставлен оригинал</string>
+    <string name="log_honorific_lost">Сервис не вернул защищённые имена (%1$d) — эти строки переводятся заново без защиты</string>
     <string name="log_whisper_no_native">Нет нативной библиотеки Whisper — транскрипция пропущена</string>
     <string name="log_whisper_need_model">Для транскрипции нужна модель ~%1$dМБ — ждём подтверждения</string>
     <string name="log_whisper_denied">Загрузка модели отклонена — конвейер остановлен</string>

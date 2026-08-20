@@ -744,6 +744,40 @@ object PipelineRunner {
     }
 
     /**
+     * Puts the masked names back, and deals with a provider that lost one.
+     *
+     * A line whose tokens did not come back exactly as they went out is translated
+     * again without masking. That is precisely the behaviour this feature replaced, so
+     * a provider that cannot hold a token costs the honorific and nothing more — never
+     * a delivered line with "__SF0__" sitting in it.
+     *
+     * @return null when even the plain retry failed, which makes the batch untranslated
+     *   and lets the existing accounting dock the score for it rather than quietly
+     *   shipping source-language cues.
+     */
+    private suspend fun unmask(
+        masked: HonorificMask.Masked,
+        translated: List<String>,
+        sourceLines: List<String>,
+        sub: DownloadedSubtitle,
+        release: Release,
+        unhealthy: MutableSet<String>
+    ): List<String>? {
+        if (!masked.active) return translated
+        val (out, lost) = HonorificMask.restoreAll(masked, translated)
+        if (lost.isEmpty()) return out
+        val patched = out.toMutableList()
+
+        log(LogLevel.WARN, L10n.t(R.string.log_honorific_lost, lost.size))
+        val plain = TranslationEngine.translateLines(
+            lost.map { sourceLines[it] }, sub.language, release.targetLang, unhealthy
+        ) { } ?: return null
+        if (plain.lines.size != lost.size) return null
+        lost.forEachIndexed { k, i -> patched[i] = plain.lines[k] }
+        return patched
+    }
+
+    /**
      * translates the SRT cue-by-cue in batches, then post-processes. if a batch is
      * still untranslated after two passes those cues stay in the source language,
      * and we only return null when nothing translated at all.
@@ -769,25 +803,36 @@ object PipelineRunner {
                 if (batchResults[bi] != null) continue
                 setProgress(0.75f + 0.15f * (bi.toFloat() / batches.size))
                 val sourceLines = batch.map { it.text.replace('\n', ' ') }
+                // rule 4: the provider never sees a name+honorific pair. Masking is done
+                // on a copy — sourceLines and cue.text stay as they are, because rule 3.2
+                // reads the honorific off the source to decide formality and a masked
+                // line has none left to read.
+                val masked = HonorificMask.mask(sourceLines)
                 val mt = TranslationEngine.translateLines(
-                    sourceLines, sub.language, release.targetLang, unhealthyProviders
+                    masked.lines, sub.language, release.targetLang, unhealthyProviders
                 ) { msg ->
                     if (bi == 0 && pass == 1) log(LogLevel.INFO, msg)
                 } ?: continue
                 if (bi == 0) Log.d("SubFlow", "Raw MT sample: ${mt.lines.firstOrNull()?.take(80)}")
 
+                val unmasked = unmask(masked, mt.lines, sourceLines, sub, release, unhealthyProviders)
+                    ?: continue // tokens lost and the plain retry failed too: batch is untranslated
+
                 // register-restoration dictionary is target-language specific
-                val dictApplied = if (release.targetLang == "tr") MegaDictionary.apply(mt.lines) else mt.lines
+                val dictApplied = if (release.targetLang == "tr") MegaDictionary.apply(unmasked) else unmasked
                 if (bi == 0) Log.d("SubFlow", "Post-dict sample: ${dictApplied.firstOrNull()?.take(80)}")
 
                 var processed = post.processBatch(sourceLines, dictApplied)
                 if (processed.retrySuggested) {
                     // nonsense, retry with a different provider (same one repeats the result)
                     val retry = TranslationEngine.translateLines(
-                        sourceLines, sub.language, release.targetLang, unhealthyProviders, avoid = mt.provider
+                        masked.lines, sub.language, release.targetLang, unhealthyProviders, avoid = mt.provider
                     ) { }
-                    if (retry != null) {
-                        val retryDict = if (release.targetLang == "tr") MegaDictionary.apply(retry.lines) else retry.lines
+                    val retryLines = retry?.let {
+                        unmask(masked, it.lines, sourceLines, sub, release, unhealthyProviders)
+                    }
+                    if (retryLines != null) {
+                        val retryDict = if (release.targetLang == "tr") MegaDictionary.apply(retryLines) else retryLines
                         val reprocessed = post.processBatch(sourceLines, retryDict)
                         if (!reprocessed.retrySuggested) processed = reprocessed
                     }

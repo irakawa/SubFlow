@@ -109,6 +109,7 @@
     <string name="log_batch_progress">Übersetzung: Batch %1$d/%2$d</string>
     <string name="log_translate_done">Übersetzung + Nachbearbeitung fertig (%1$d Cues)</string>
     <string name="log_batches_failed">%1$d Batches unübersetzt, Original belassen</string>
+    <string name="log_honorific_lost">Anbieter gab %1$d geschützte(n) Namen nicht zurück — diese Zeilen werden ungeschützt neu übersetzt</string>
     <string name="log_whisper_no_native">Whisper-Native-Lib fehlt — Transkription übersprungen</string>
     <string name="log_whisper_need_model">Transkription braucht ~%1$dMB Modell — warte auf Zustimmung</string>
     <string name="log_whisper_denied">Modell-Download abgelehnt — Pipeline stoppt</string>

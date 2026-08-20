@@ -109,6 +109,7 @@
     <string name="log_batch_progress">الترجمة: دفعة %1$d/%2$d</string>
     <string name="log_translate_done">اكتملت الترجمة والمعالجة (%1$d سطرًا)</string>
     <string name="log_batches_failed">%1$d دفعة لم تُترجم، بقيت بالأصل</string>
+    <string name="log_honorific_lost">لم يُعِد المزوّد %1$d اسمًا محميًا — تُترجم تلك السطور من جديد بدون حماية</string>
     <string name="log_whisper_no_native">مكتبة Whisper الأصلية غير متوفرة — تم تخطي النسخ</string>
     <string name="log_whisper_need_model">يتطلب النسخ نموذجًا بحجم ~%1$d ميغابايت — بانتظار الموافقة</string>
     <string name="log_whisper_denied">رُفض تنزيل النموذج — إيقاف خط المعالجة</string>
