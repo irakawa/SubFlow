@@ -199,6 +199,8 @@
     <string name="restore_fail">ملف نسخ غير صالح</string>
     <string name="backup_contents">يشمل السمة واللغة والحفظ التلقائي والمسلسلات المتابَعة. مفاتيح API لا تُنسخ — تبقى على هذا الجهاز.</string>
     <string name="restore_contents">لا تُستعاد مفاتيح API من النسخة الاحتياطية أبدًا. أعد إدخالها من مفاتيح API.</string>
+    <string name="episode_unverified_badge">الحلقة غير مؤكَّدة</string>
+    <string name="log_episode_unverified">تعذّر تأكيد الحلقة من اسم الملف: %1$s — تحقّق قبل الاستخدام</string>
     <string name="open_in_player">▶ فتح في المشغّل</string>
     <string name="no_player">لم يُعثر على مشغّل فيديو</string>
     <string name="notif_ready">الترجمات جاهزة</string>

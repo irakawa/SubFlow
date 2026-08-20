@@ -293,7 +293,10 @@ class SubtitleCascade(
             fileName = fileName,
             content = content,
             language = candidate.language,
-            sourceName = candidate.sourceName
+            sourceName = candidate.sourceName,
+            // the gate can pass a candidate that never names an episode; record whether
+            // this one actually did, so the result can be honest about it downstream
+            episodeVerified = ContentIdentity.episodeConfirmed(candidate.title, release)
         )
     }
 }

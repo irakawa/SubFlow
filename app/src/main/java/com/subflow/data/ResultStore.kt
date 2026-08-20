@@ -33,6 +33,7 @@ object ResultStore {
                         .put("tonePreserved", r.tonePreserved)
                         .put("untranslatedPct", r.untranslatedPct)
                         .put("rawMachineTranslation", r.rawMachineTranslation)
+                        .put("episodeVerified", r.episodeVerified)
                 )
             }
             File(dir(context), "$id.json").writeText(arr.toString(), Charsets.UTF_8)
@@ -60,7 +61,10 @@ object ResultStore {
                     qualityScore = o.optInt("qualityScore", 0),
                     tonePreserved = o.optBoolean("tonePreserved", false),
                     untranslatedPct = o.optInt("untranslatedPct", 0),
-                    rawMachineTranslation = o.optBoolean("rawMachineTranslation", false)
+                    rawMachineTranslation = o.optBoolean("rawMachineTranslation", false),
+                    // absent in sets written before the flag existed; those were scored
+                    // as verified, so reading them back as verified keeps them consistent
+                    episodeVerified = o.optBoolean("episodeVerified", true)
                 )
             }.ifEmpty { null }
         } catch (e: Throwable) {

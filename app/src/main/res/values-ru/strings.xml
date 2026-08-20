@@ -199,6 +199,8 @@
     <string name="restore_fail">Неверный файл резервной копии</string>
     <string name="backup_contents">Включает тему, язык, автосохранение и отслеживаемые сериалы. Ключи API не сохраняются — они остаются на этом устройстве.</string>
     <string name="restore_contents">Ключи API никогда не восстанавливаются из резервной копии. Введите их заново в разделе «Ключи API».</string>
+    <string name="episode_unverified_badge">Эпизод не подтверждён</string>
+    <string name="log_episode_unverified">Эпизод не удалось подтвердить по имени файла: %1$s — проверьте перед использованием</string>
     <string name="open_in_player">▶ Открыть в плеере</string>
     <string name="no_player">Видеоплеер не найден</string>
     <string name="notif_ready">Субтитры готовы</string>

@@ -395,6 +395,8 @@ object PipelineRunner {
                 val report = SyncEngine.validateAndSync(release, sub.fileName, sub.content)
                 report.warning?.let { log(LogLevel.WARN, it) }
                 if (report.tagsMatched) log(LogLevel.OK, L10n.t(R.string.log_tags_match, sub.fileName))
+                if (!sub.episodeVerified) log(LogLevel.WARN, L10n.t(R.string.log_episode_unverified, sub.fileName))
+                val base = if (report.tagsMatched) Quality.HUMAN_TAGS_MATCH else Quality.HUMAN
                 results += SubtitleResult(
                     fileName = outName,
                     content = report.content,
@@ -403,8 +405,10 @@ object PipelineRunner {
                     sizeBytes = report.content.toByteArray().size,
                     episodeLabel = release.displayName(),
                     syncWarning = report.warning,
-                    // identity already gate-verified, score is provenance not a re-match
-                    qualityScore = if (report.tagsMatched) Quality.HUMAN_TAGS_MATCH else Quality.HUMAN
+                    // identity already gate-verified, score is provenance not a re-match —
+                    // except the gate cannot always settle the episode, and that caps it
+                    qualityScore = if (sub.episodeVerified) base else Quality.withUnverifiedEpisode(base),
+                    episodeVerified = sub.episodeVerified
                 )
             }
         } else {
@@ -462,6 +466,10 @@ object PipelineRunner {
                             qualityScore = Quality.EMBEDDED
                         )
                     } else {
+                        // episodeVerified defaults to true here and for the two sources
+                        // below on purpose: these bytes come out of the very file the user
+                        // pointed at (or, for the torrent, the file TorrentSubtitle picked
+                        // by episode). There is no third-party title left to doubt.
                         sourceSub = DownloadedSubtitle(outName, content, lang, "MKV embedded track")
                     }
                 }
@@ -535,6 +543,7 @@ object PipelineRunner {
                 val w = cascadeResult.weakTargets.first()
                 val report = SyncEngine.validateAndSync(release, w.fileName, w.content)
                 report.warning?.let { log(LogLevel.WARN, it) }
+                if (!w.episodeVerified) log(LogLevel.WARN, L10n.t(R.string.log_episode_unverified, w.fileName))
                 results += SubtitleResult(
                     fileName = outName,
                     content = report.content,
@@ -543,7 +552,9 @@ object PipelineRunner {
                     sizeBytes = report.content.toByteArray().size,
                     episodeLabel = release.displayName(),
                     syncWarning = report.warning,
-                    qualityScore = Quality.HUMAN
+                    qualityScore = if (w.episodeVerified) Quality.HUMAN
+                    else Quality.withUnverifiedEpisode(Quality.HUMAN),
+                    episodeVerified = w.episodeVerified
                 )
             }
 
@@ -636,15 +647,21 @@ object PipelineRunner {
                     results[i] = results[i].copy(
                         content = VadSync.apply(results[i].content, aligned),
                         syncWarning = null,
-                        // measured a real drift and corrected it, nudge by measured confidence
-                        qualityScore = Quality.withSync(results[i].qualityScore, confPct)
+                        // measured a real drift and corrected it, nudge by measured confidence.
+                        // timing says nothing about which episode this is, so an unconfirmed
+                        // one keeps its cap
+                        qualityScore = Quality.episodeAwareSync(
+                            results[i].qualityScore, confPct, results[i].episodeVerified
+                        )
                     )
                 } else {
                     log(LogLevel.OK, L10n.t(R.string.log_vad_aligned, confPct))
                     results[i] = results[i].copy(
                         syncWarning = null,
-                        // already well-aligned against the audio, same nudge
-                        qualityScore = Quality.withSync(results[i].qualityScore, confPct)
+                        // already well-aligned against the audio, same nudge and same cap
+                        qualityScore = Quality.episodeAwareSync(
+                            results[i].qualityScore, confPct, results[i].episodeVerified
+                        )
                     )
                 }
             }
@@ -825,7 +842,11 @@ object PipelineRunner {
             // sit lower. cues we could not translate come straight off the top: they are
             // the part of the file that does not do what the result claims to do.
             qualityScore = Quality.withUntranslated(
-                Quality.forTranslation(fromWhisper, postProcessed),
+                if (sub.episodeVerified) Quality.forTranslation(fromWhisper, postProcessed)
+                // translating a file we could not tie to this episode produces a
+                // well-made subtitle for possibly the wrong episode. the work does not
+                // raise the confidence in what it was done to.
+                else Quality.withUnverifiedEpisode(Quality.forTranslation(fromWhisper, postProcessed)),
                 untranslatedPct
             ),
             // only claimed when the sanitize repair measurably rewrote a line. the same
@@ -833,7 +854,8 @@ object PipelineRunner {
             // MT never softened simply carries no badge.
             tonePreserved = toneHardened,
             untranslatedPct = untranslatedPct,
-            rawMachineTranslation = !postProcessed
+            rawMachineTranslation = !postProcessed,
+            episodeVerified = sub.episodeVerified
         )
     }
 }

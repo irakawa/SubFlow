@@ -266,6 +266,28 @@ object ContentIdentity {
         return true
     }
 
+    /**
+     * True when the candidate's own name proves it is the requested episode.
+     *
+     * This is a narrower question than [verify]. verify() accepts a candidate that says
+     * nothing about the episode at all — a bare "Transformers Prime" for an S01E06
+     * request reaches 45 + 15 + 10 = 70 and clears [SCORE_GATE] on the title alone.
+     * Rejecting those would turn real single-episode uploads into "not found", so they
+     * are still delivered; they just must not be presented as a checked match. That is
+     * what this answers, and the caller downgrades the score and badges the result.
+     *
+     * A bare number carries its season implicitly only for season 1, the fansub
+     * convention ("[Group] Show - 06"). For any later season the same name could have
+     * come from anywhere, so the season has to be stated too.
+     */
+    fun episodeConfirmed(candidateTitle: String, release: Release): Boolean {
+        val wanted = release.episode ?: return true // nothing was asked, nothing to confirm
+        if (extractEpisode(candidateTitle, release.type, release) != wanted) return false
+        val wantedSeason = release.season ?: return true
+        val candSeason = extractSeason(candidateTitle)
+        return candSeason == wantedSeason || (candSeason == null && wantedSeason == 1)
+    }
+
     /** markers separating a show name from its episode designation. */
     private val episodeMarkers = listOf(
         Regex("[Ss]\\d{1,2}[ ._-]?[Ee]\\d{1,4}"),

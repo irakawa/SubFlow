@@ -199,6 +199,8 @@
     <string name="restore_fail">Ungültige Sicherungsdatei</string>
     <string name="backup_contents">Enthält Design, Sprache, Auto-Speichern und verfolgte Serien. API-Schlüssel werden nicht gesichert — sie bleiben auf diesem Gerät.</string>
     <string name="restore_contents">API-Schlüssel werden nie aus einer Sicherung wiederhergestellt. Unter API-Schlüssel neu eingeben.</string>
+    <string name="episode_unverified_badge">Folge nicht bestätigt</string>
+    <string name="log_episode_unverified">Folge konnte nicht aus dem Dateinamen bestätigt werden: %1$s — vor der Nutzung prüfen</string>
     <string name="open_in_player">▶ Im Player öffnen</string>
     <string name="no_player">Kein Videoplayer gefunden</string>
     <string name="notif_ready">Untertitel bereit</string>

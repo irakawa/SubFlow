@@ -18,6 +18,7 @@ internal object Quality {
     const val TRANSLATED = 85       // our own EN/JA to TR production, first class
     const val WHISPER = 75          // transcription adds a real, honest extra uncertainty
     const val TRANSLATED_RAW = 70   // raw provider output, no quality layer ran
+    const val UNVERIFIED_EPISODE = 50 // right show, but nothing proved it is this episode
     const val FLOOR = 70
     const val CEILING = 98
 
@@ -38,6 +39,31 @@ internal object Quality {
         val base = if (fromWhisper) WHISPER else TRANSLATED
         return if (postProcessed) base else minOf(base, TRANSLATED_RAW)
     }
+
+    /**
+     * Caps a result whose episode the candidate name never confirmed
+     * (ContentIdentity.episodeConfirmed).
+     *
+     * A cap, not a subtraction, so it composes with the other penalties rather than
+     * overriding them: a file that is both unverified and half untranslated keeps the
+     * lower number. It sits below [FLOOR] for the same reason [withUntranslated] is
+     * allowed to — the floor keeps a fully delivered, gated result out of the failure
+     * band, and a file that might be the wrong episode is not that. Not near zero
+     * either: the title matched, the season did not contradict, and the content passed
+     * the language gate. It is a plausible file, not a proven one, and the score should
+     * say exactly that much.
+     */
+    fun withUnverifiedEpisode(base: Int): Int = minOf(base, UNVERIFIED_EPISODE)
+
+    /**
+     * [withSync], except an unconfirmed episode is left where it is.
+     *
+     * Aligning cues against the video's speech says how well the timing fits, not which
+     * episode the file belongs to. Letting a good correlation nudge the score up would
+     * quietly restate the claim [withUnverifiedEpisode] exists to withdraw.
+     */
+    fun episodeAwareSync(base: Int, confPct: Int, episodeVerified: Boolean): Int =
+        if (episodeVerified) withSync(base, confPct) else base
 
     /**
      * blends a base score with measured VAD confidence. only called when timing was measured.

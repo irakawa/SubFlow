@@ -236,11 +236,15 @@ private fun ResultCard(result: SubtitleResult, viewModel: SearchViewModel) {
                     style = MaterialTheme.typography.bodySmall
                 )
                 if (result.qualityScore > 0 || result.tonePreserved ||
-                    result.untranslatedPct > 0 || result.rawMachineTranslation
+                    result.untranslatedPct > 0 || result.rawMachineTranslation ||
+                    !result.episodeVerified
                 ) {
                     Spacer(Modifier.height(6.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         if (result.qualityScore > 0) QualityBadge(result.qualityScore)
+                        // first among the warnings: the wrong episode makes every other
+                        // property of the file irrelevant
+                        if (!result.episodeVerified) EpisodeUnverifiedBadge()
                         if (result.untranslatedPct > 0) UntranslatedBadge(result.untranslatedPct)
                         if (result.rawMachineTranslation) RawMtBadge()
                         if (result.tonePreserved) ToneBadge()
@@ -385,6 +389,26 @@ private fun NudgeButton(label: String, onClick: () -> Unit) {
             .padding(horizontal = 8.dp, vertical = 5.dp)
     ) {
         Text(label, style = MaterialTheme.typography.labelSmall, color = SubFlowColors.TextPrimary)
+    }
+}
+
+// badge: nothing in the candidate's name tied it to the requested episode. the identity
+// gate can pass a bare show title, so "delivered" and "checked" are different claims and
+// this is the one the user cannot make for themselves without opening the file.
+@Composable
+private fun EpisodeUnverifiedBadge() {
+    val color = SubFlowColors.Error
+    Box(
+        Modifier
+            .background(color.copy(alpha = 0.12f), RoundedCornerShape(50))
+            .border(1.dp, color.copy(alpha = 0.5f), RoundedCornerShape(50))
+            .padding(horizontal = 10.dp, vertical = 3.dp)
+    ) {
+        Text(
+            stringResource(R.string.episode_unverified_badge),
+            style = MaterialTheme.typography.labelSmall,
+            color = color
+        )
     }
 }
 

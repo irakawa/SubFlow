@@ -23,7 +23,13 @@ data class DownloadedSubtitle(
     val fileName: String,
     val content: String,           // UTF-8 .srt content
     val language: String,
-    val sourceName: String
+    val sourceName: String,
+    /**
+     * true when the candidate's name actually stated the requested episode
+     * (ContentIdentity.episodeConfirmed). Carried from the cascade so the result can
+     * say so, whether this file is served directly or translated first.
+     */
+    val episodeVerified: Boolean = true
 )
 
 @Immutable
@@ -50,7 +56,13 @@ data class SubtitleResult(
      * Turkish (SUBFLOW_LANGUAGE_RULES 8.1), so any other target language gets the
      * machine translation and nothing else. The user is told rather than left to assume.
      */
-    val rawMachineTranslation: Boolean = false
+    val rawMachineTranslation: Boolean = false,
+    /**
+     * false when nothing in the candidate's name proved this is the requested episode.
+     * The identity gate can pass a bare show title, so "it got through" and "we checked
+     * the episode" are not the same statement and are not shown as one.
+     */
+    val episodeVerified: Boolean = true
 )
 
 /** page that might host the subtitle but couldn't be auto-downloaded. offered as a manual lead. */

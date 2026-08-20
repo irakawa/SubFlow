@@ -210,6 +210,8 @@
     <string name="restore_fail">Invalid backup file</string>
     <string name="backup_contents">Includes theme, language, auto-save and followed shows. API keys are not backed up — they stay on this device.</string>
     <string name="restore_contents">API keys are never restored from a backup. Re-enter them under API keys.</string>
+    <string name="episode_unverified_badge">Episode not verified</string>
+    <string name="log_episode_unverified">Episode could not be verified from the file name: %1$s — check it matches before using it</string>
     <string name="open_in_player">▶ Open in player</string>
     <string name="no_player">No video player found</string>
     <string name="notif_ready">Subtitles ready</string>
