@@ -110,6 +110,7 @@
     <string name="log_translate_done">Traducción + posprocesado listo (%1$d cues)</string>
     <string name="log_batches_failed">%1$d lotes sin traducir, se dejó el original</string>
     <string name="log_honorific_lost">El proveedor no devolvió %1$d nombre(s) protegido(s): esas líneas se retraducen sin protección</string>
+    <string name="log_honorific_skipped">Protección de nombres desactivada en %1$d líneas: el origen ya contiene la marca</string>
     <string name="log_whisper_no_native">Falta la librería nativa de Whisper — se omite transcripción</string>
     <string name="log_whisper_need_model">La transcripción requiere un modelo de ~%1$dMB — esperando permiso</string>
     <string name="log_whisper_denied">Descarga del modelo rechazada — se detiene el pipeline</string>

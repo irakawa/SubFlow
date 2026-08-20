@@ -816,6 +816,11 @@ object PipelineRunner {
                 // reads the honorific off the source to decide formality and a masked
                 // line has none left to read.
                 val masked = HonorificMask.mask(sourceLines)
+                if (masked.skipped == HonorificMask.Skipped.TOKEN_SHAPE_IN_SOURCE) {
+                    // rule 4 is off for this batch and the user would otherwise have no
+                    // way to know it ever was
+                    log(LogLevel.INFO, L10n.t(R.string.log_honorific_skipped, batch.size))
+                }
                 val mt = TranslationEngine.translateLines(
                     masked.lines, sub.language, release.targetLang, unhealthyProviders
                 ) { msg ->

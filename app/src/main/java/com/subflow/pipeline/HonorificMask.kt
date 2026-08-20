@@ -71,10 +71,28 @@ internal object HonorificMask {
      * honorifics off the source text to decide formality and a masked line has no
      * honorific left to find.
      */
+    /** why a batch went to the provider unprotected. null when it did not. */
+    enum class Skipped {
+        /** no name+honorific pair in the batch. the ordinary case, not worth a log line. */
+        NOTHING_TO_MASK,
+
+        /** the source already contains the token shape, so ours would be indistinguishable. */
+        TOKEN_SHAPE_IN_SOURCE
+    }
+
     data class Masked(
         val lines: List<String>,
         private val names: Map<String, String>,
-        private val expected: List<Map<String, Int>>
+        private val expected: List<Map<String, Int>>,
+        /**
+         * why masking did not run, or null when it did.
+         *
+         * Carried rather than inferred from [active] because the two reasons are not
+         * alike: having nothing to mask happens on most batches, while refusing over a
+         * token collision turns rule 4's protection off for twenty-five cues and needs
+         * to be visible to somebody.
+         */
+        val skipped: Skipped? = null
     ) {
         /** false when there was nothing to mask, or masking was refused. */
         val active: Boolean get() = names.isNotEmpty()
@@ -90,7 +108,9 @@ internal object HonorificMask {
     fun mask(lines: List<String>): Masked {
         // if the shape already occurs in the text we would not be able to tell our own
         // token from theirs on the way back, so this batch simply goes unmasked
-        if (lines.any { it.contains(PREFIX) }) return Masked(lines, emptyMap(), emptyList())
+        if (lines.any { it.contains(PREFIX) }) {
+            return Masked(lines, emptyMap(), emptyList(), Skipped.TOKEN_SHAPE_IN_SOURCE)
+        }
 
         val names = LinkedHashMap<String, String>()   // token -> "Hana-chan"
         val assigned = LinkedHashMap<String, String>() // "Hana-chan" -> token
@@ -110,7 +130,7 @@ internal object HonorificMask {
             expected += counts
             out += masked
         }
-        return Masked(out, names, expected)
+        return Masked(out, names, expected, if (names.isEmpty()) Skipped.NOTHING_TO_MASK else null)
     }
 
     /**

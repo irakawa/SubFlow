@@ -116,6 +116,7 @@
     <string name="log_translate_done">Translation + post-processing done (%1$d cues)</string>
     <string name="log_batches_failed">%1$d batches untranslated, left original</string>
     <string name="log_honorific_lost">Provider did not return %1$d protected name(s) — retranslating those lines unprotected</string>
+    <string name="log_honorific_skipped">Name protection off for %1$d cues — the source already contains the marker shape</string>
     <string name="log_whisper_no_native">Whisper native library missing in this build — skipping transcription</string>
     <string name="log_whisper_need_model">Transcription needs a ~%1$dMB model — awaiting consent</string>
     <string name="log_whisper_denied">Model download declined — stopping pipeline</string>

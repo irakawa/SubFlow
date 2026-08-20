@@ -169,10 +169,23 @@ class HonorificMaskTest {
     // --- do not mask what should not be masked ---
 
     @Test
-    fun `a line that already contains the token shape is left unmasked`() {
+    fun `a line that already contains the token shape is left unmasked, and says why`() {
+        // rule 4's protection switches off for the whole batch here, so the reason has
+        // to travel with the result — a silent 25-cue gap is one nobody can see
         val masked = HonorificMask.mask(listOf("Build __SF0__ failed.", "Hana-chan is here."))
         assertFalse(masked.active)
         assertEquals("Hana-chan is here.", masked.lines[1])
+        assertEquals(HonorificMask.Skipped.TOKEN_SHAPE_IN_SOURCE, masked.skipped)
+    }
+
+    @Test
+    fun `having nothing to mask is not the same as being refused`() {
+        // one is worth a log line, the other happens on most batches and is not
+        assertEquals(
+            HonorificMask.Skipped.NOTHING_TO_MASK,
+            HonorificMask.mask(listOf("Nothing to see here.")).skipped
+        )
+        assertNull(HonorificMask.mask(listOf("Hana-chan is here.")).skipped)
     }
 
     @Test
