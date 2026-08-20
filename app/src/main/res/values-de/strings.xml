@@ -227,6 +227,11 @@
     <string name="log_torrent_stream">SCHRITT 4d — Untertitel nur im Torrent; Untertitelspur wird gestreamt (kein Video-Download)</string>
     <string name="log_torrent_data_warning">Torrent-Methode: Videostücke werden geladen, bis zu %1$d MB</string>
     <string name="log_torrent_metered_skip">Bei mobilen Daten übersprungen — diese Methode lädt Videostücke. Im WLAN erneut versuchen.</string>
+    <string name="log_torrent_metadata">Torrent: Metadaten werden geladen (Verbindung)…</string>
+    <string name="log_torrent_no_peers">Torrent: keine Metadaten — keine Peers erreichbar; WLAN oder anderes Netz versuchen</string>
+    <string name="log_torrent_dht_ready">Torrent: DHT bereit, %1$d Knoten</string>
+    <string name="log_torrent_no_video">Torrent: keine Videodatei passend zu dieser Folge</string>
+    <string name="log_torrent_streaming">Torrent: Untertitelspur wird gestreamt — nur die abgedeckten Teile werden geladen</string>
     <string name="log_torrent_budget_hit">Bei %1$d MB gestoppt, bevor eine Untertitelspur gefunden wurde</string>
     <string name="api_hint_subsource">Starke türkische Abdeckung · kostenloser Key aus deinem Profil</string>
 </resources>

@@ -272,22 +272,48 @@ olarak değil.**
 
 ## 8. KALİTE KATMANLARI (Pipeline Sırası)
 
+Sıra iki aşamada işler: önce batch başına (25 cue), sonra dosyanın
+tamamı toplandıktan sonra tek geçişte.
+
 ```
-Ham MT çıktısı (LibreTranslate)
-    ↓
+BATCH BAŞINA (TranslationEngine.BATCH_SIZE = 25 cue)
+
+Ham MT çıktısı       (sağlayıcı sırası: Google gtx → Google clients5
+    ↓                 → LibreTranslate → MyMemory; ilk cevap veren kazanır)
 MegaDictionary       (argo/küfür/terim sözlüğü + atasözü/deyim eşleşmeleri)
     ↓
-Bağlam Motoru        (context + karakter tutarlılığı + kekeleme tespiti)
+PostProcessor        (biçimsel temizlik → glossary → özel isim koruma
+    ↓                 → sansür sertleştirme → anlamsızlık tespiti)
+    ↓                 anlamsız çıktı: farklı sağlayıcıyla bir kez yeniden dener
+Localize.godToTanri  (6.1 Tanrı/Allah terim politikası)
+
+──────────────── tüm batch'ler bittikten sonra ────────────────
+
+DOSYA GENELİNDE (cue sırasına göre tek geçiş)
+
+GrammarFixer.fix                (3.2 tekil/çoğul hitap)
     ↓
-Gramer Fixer         (genel gramer + tekil/çoğul hitap + mı/mi doğrulaması)
+GrammarFixer.fixSurpriseParticle (3.3 gereksiz mı/mi)
     ↓
-Semantik Validator   (anlam kontrolü, sanitize tespiti, son kontroller)
+StutterPreserver.apply          (2.1 kekeleme)
     ↓
 FINAL .srt
 ```
 
-> Ham MT çıktısı hiçbir zaman final olarak yazılmaz — her satır
-> bu 4 katmandan geçmeden .srt'ye yazılamaz.
+> **Gramer katmanı neden en sonda?** `SceneParticipantTracker` sahnedeki
+> katılımcıyı satır satır takip eder ve her cue'yu **tam olarak bir kez,
+> sırayla** görmek zorundadır. Batch'ler paralel/yeniden denemeli
+> işlendiği için bu ancak dosyanın tamamı toplandıktan sonra mümkün.
+> Doküman daha önce bu katmanı ortada gösteriyordu; kod hiçbir zaman
+> öyle çalışmadı.
+
+> **Garanti ve sınırı:** Çevrilen her satır yukarıdaki katmanlardan geçer;
+> ham MT çıktısı doğrudan .srt'ye yazılmaz. Ancak iki pass sonunda hiç
+> çevrilemeyen batch'lerin cue'ları kaynak dilde kalır — bunlar atılmaz,
+> çünkü eksik bir dosya hiç dosya olmamasından iyidir. Bu durum gizlenmez:
+> oran `SubtitleResult.untranslatedPct` ile taşınır, puandan yüzde başına
+> bir puan düşülür (`Quality.withUntranslated`) ve arayüzde ayrı bir rozet
+> gösterilir.
 
 ### 8.1 — İSTİSNA: Bu doküman yalnızca Türkçe hedef dil için geçerlidir
 

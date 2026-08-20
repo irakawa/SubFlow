@@ -227,6 +227,11 @@
     <string name="log_torrent_stream">PASO 4d — Subtítulo solo en un torrent; transmitiendo su pista (sin descargar vídeo)</string>
     <string name="log_torrent_data_warning">Método torrent: se descargarán fragmentos de vídeo, hasta %1$d MB</string>
     <string name="log_torrent_metered_skip">Omitido con datos móviles — este método descarga fragmentos de vídeo. Reinténtalo con Wi-Fi.</string>
+    <string name="log_torrent_metadata">torrent: obteniendo metadatos (conectando)…</string>
+    <string name="log_torrent_no_peers">torrent: sin metadatos — no hay pares accesibles; prueba con Wi-Fi u otra red</string>
+    <string name="log_torrent_dht_ready">torrent: DHT listo, %1$d nodos</string>
+    <string name="log_torrent_no_video">torrent: ningún archivo de vídeo coincide con este episodio</string>
+    <string name="log_torrent_streaming">torrent: transmitiendo la pista de subtítulos — solo se descargan las partes que cubre</string>
     <string name="log_torrent_budget_hit">Detenido en el límite de %1$d MB antes de encontrar una pista de subtítulos</string>
     <string name="api_hint_subsource">Amplia cobertura en turco · clave gratuita desde tu perfil</string>
 </resources>

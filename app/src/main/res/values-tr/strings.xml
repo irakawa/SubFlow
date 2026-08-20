@@ -232,6 +232,11 @@
     <string name="log_torrent_stream">ADIM 4d — Altyazı yalnız torrent\'te; altyazı izi akıtılıyor (video indirilmiyor)</string>
     <string name="log_torrent_data_warning">Torrent yöntemi: video parçaları inecek, en fazla %1$d MB</string>
     <string name="log_torrent_metered_skip">Mobil veride atlandı — bu yöntem video parçası indirir. Wi-Fi\'de tekrar dene.</string>
+    <string name="log_torrent_metadata">torrent: metadata alınıyor (bağlanılıyor)…</string>
+    <string name="log_torrent_no_peers">torrent: metadata alınamadı — eş (peer) bulunamadı; WiFi veya farklı bir ağ dene</string>
+    <string name="log_torrent_dht_ready">torrent: DHT hazır, %1$d düğüm</string>
+    <string name="log_torrent_no_video">torrent: bu bölüme uyan video dosyası yok</string>
+    <string name="log_torrent_streaming">torrent: altyazı izi akıtılıyor — yalnızca izin kapsadığı parçalar iniyor</string>
     <string name="log_torrent_budget_hit">Altyazı izi bulunamadan %1$d MB sınırına gelindi, durduruldu</string>
     <string name="api_hint_subsource">Güçlü Türkçe kapsamı · profilinden ücretsiz anahtar</string>
 </resources>

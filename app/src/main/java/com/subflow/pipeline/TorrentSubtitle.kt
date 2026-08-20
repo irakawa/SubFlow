@@ -126,24 +126,6 @@ object TorrentSubtitle {
         return sb.toString()
     }
 
-    /** Single magnet or raw .torrent bytes (kept for callers that have exactly one). */
-    suspend fun extract(
-        context: Context,
-        source: Any,
-        release: com.subflow.models.Release,
-        onLog: suspend (String) -> Unit
-    ): String? = if (source is String) extractFromMagnets(context, listOf(source), release, onLog)
-    else withContext(Dispatchers.IO) {
-        val session = tunedSession()
-        try {
-            withTimeoutOrNull(OVERALL_TIMEOUT_MS) {
-                try { run(context, session, source, release, onLog) }
-                catch (e: kotlinx.coroutines.CancellationException) { throw e }
-                catch (e: Throwable) { null }
-            }
-        } finally { runCatching { session.stop() } }
-    }
-
     /**
      * Tries several magnets with one shared, dht-warmed session so the bootstrap is paid
      * once and every attempt reuses the growing node table. Stops at the first success.
@@ -173,7 +155,7 @@ object TorrentSubtitle {
             // a healthy count with no metadata means the torrent has no reachable seeders.
             var waited = 0L
             while (session.dhtNodes() < 10 && waited < DHT_WARMUP_MS) { delay(500); waited += 500 }
-            onLog("torrent: DHT ${session.dhtNodes()} düğüm hazır")
+            onLog(L10n.t(R.string.log_torrent_dht_ready, session.dhtNodes()))
             for (magnet in magnets) {
                 val r = withTimeoutOrNull(OVERALL_TIMEOUT_MS) {
                     // don't runCatching the suspend call, it would swallow real cancellation.
@@ -193,7 +175,7 @@ object TorrentSubtitle {
     private suspend fun run(
         context: Context,
         session: SessionManager,
-        source: Any,
+        magnet: String,
         release: com.subflow.models.Release,
         onLog: suspend (String) -> Unit
     ): String? {
@@ -201,24 +183,18 @@ object TorrentSubtitle {
         var handle: TorrentHandle? = null
         var server: LoopbackFileServer? = null
         try {
-            val ti: TorrentInfo = when (source) {
-                is ByteArray -> TorrentInfo(source)
-                is String -> {
-                    onLog("torrent: fetching metadata… (bağlanılıyor)")
-                    // fetchMagnet is a blocking native call. runInterruptible lets cancellation
-                    // interrupt the thread instead of hanging on it. the timeout arg still bounds it.
-                    val data = runInterruptible {
-                        session.fetchMagnet(withTrackers(source), (METADATA_TIMEOUT_MS / 1000).toInt(), false)
-                    }
-                    if (data == null) {
-                        // most common causes: no seeders reachable, or the network blocks P2P
-                        onLog("torrent: metadata alınamadı — eş (peer) bulunamadı; WiFi/farklı ağ dene")
-                        return null
-                    }
-                    TorrentInfo(data)
-                }
-                else -> return null
+            onLog(L10n.t(R.string.log_torrent_metadata))
+            // fetchMagnet is a blocking native call. runInterruptible lets cancellation
+            // interrupt the thread instead of hanging on it. the timeout arg still bounds it.
+            val data = runInterruptible {
+                session.fetchMagnet(withTrackers(magnet), (METADATA_TIMEOUT_MS / 1000).toInt(), false)
             }
+            if (data == null) {
+                // most common causes: no seeders reachable, or the network blocks P2P
+                onLog(L10n.t(R.string.log_torrent_no_peers))
+                return null
+            }
+            val ti = TorrentInfo(data)
 
             // pick the episode's video file (largest video whose name matches)
             val files = ti.files()
@@ -235,7 +211,7 @@ object TorrentSubtitle {
                     bestSize = files.fileSize(i); fileIndex = i
                 }
             }
-            if (fileIndex < 0) { onLog("torrent: no matching video file"); return null }
+            if (fileIndex < 0) { onLog(L10n.t(R.string.log_torrent_no_video)); return null }
 
             // dir keyed by info-hash so a slow async remove() of a prior magnet can't
             // collide with this one's storage. each magnet owns its own subdir.
@@ -260,7 +236,7 @@ object TorrentSubtitle {
             val url = "http://127.0.0.1:${server.port}/video"
             // shown to the user, so it says what actually happens: the pieces the subtitle
             // track spans are fetched, not the whole file, and not nothing
-            onLog("torrent: altyazı izi akıtılıyor — yalnızca izin kapsadığı parçalar iniyor")
+            onLog(L10n.t(R.string.log_torrent_streaming))
 
             val extracted = FFmpegTools.extractSubtitleFromHttp(url, context.cacheDir, release.targetLang) { onLog(it) }
             if (server.budgetExceeded) {

@@ -227,6 +227,11 @@
     <string name="log_torrent_stream">ШАГ 4d — Субтитры только в торренте; потоковая дорожка (видео не скачивается)</string>
     <string name="log_torrent_data_warning">Торрент-метод: будут загружены фрагменты видео, до %1$d МБ</string>
     <string name="log_torrent_metered_skip">Пропущено на мобильных данных — метод загружает фрагменты видео. Повторите по Wi-Fi.</string>
+    <string name="log_torrent_metadata">torrent: получение метаданных (подключение)…</string>
+    <string name="log_torrent_no_peers">torrent: метаданные не получены — пиры недоступны; попробуйте Wi-Fi или другую сеть</string>
+    <string name="log_torrent_dht_ready">torrent: DHT готов, узлов: %1$d</string>
+    <string name="log_torrent_no_video">torrent: нет видеофайла, подходящего под этот эпизод</string>
+    <string name="log_torrent_streaming">torrent: поток дорожки субтитров — скачиваются только затронутые части</string>
     <string name="log_torrent_budget_hit">Остановлено на пределе %1$d МБ до того, как нашлась дорожка субтитров</string>
     <string name="api_hint_subsource">Хорошее покрытие турецкого · бесплатный ключ в профиле</string>
 </resources>

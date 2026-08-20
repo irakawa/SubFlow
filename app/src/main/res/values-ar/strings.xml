@@ -227,6 +227,11 @@
     <string name="log_torrent_stream">الخطوة 4d — الترجمة داخل تورنت فقط؛ بث مسار الترجمة (دون تنزيل الفيديو)</string>
     <string name="log_torrent_data_warning">طريقة التورنت: ستُنزَّل أجزاء من الفيديو، حتى %1$d ميغابايت</string>
     <string name="log_torrent_metered_skip">تم التخطي على بيانات الجوال — هذه الطريقة تنزّل أجزاء فيديو. أعد المحاولة عبر Wi-Fi.</string>
+    <string name="log_torrent_metadata">تورنت: جلب البيانات الوصفية (جارٍ الاتصال)…</string>
+    <string name="log_torrent_no_peers">تورنت: تعذّر جلب البيانات الوصفية — لا أقران متاحين؛ جرّب Wi-Fi أو شبكة أخرى</string>
+    <string name="log_torrent_dht_ready">تورنت: DHT جاهز، %1$d عقدة</string>
+    <string name="log_torrent_no_video">تورنت: لا يوجد ملف فيديو يطابق هذه الحلقة</string>
+    <string name="log_torrent_streaming">تورنت: بث مسار الترجمة — تُنزَّل فقط الأجزاء التي يغطيها</string>
     <string name="log_torrent_budget_hit">توقّف عند حد %1$d ميغابايت قبل العثور على مسار ترجمة</string>
     <string name="api_hint_subsource">تغطية تركية قوية · مفتاح مجاني من ملفك الشخصي</string>
 </resources>

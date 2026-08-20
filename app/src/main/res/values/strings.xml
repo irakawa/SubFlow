@@ -237,6 +237,11 @@
     <string name="log_torrent_stream">STEP 4d — Subtitle only in a torrent; streaming its subtitle track (video not downloaded)</string>
     <string name="log_torrent_data_warning">Torrent method: video pieces will be downloaded, up to %1$d MB</string>
     <string name="log_torrent_metered_skip">Skipped on mobile data — this method downloads video pieces. Retry on Wi-Fi.</string>
+    <string name="log_torrent_metadata">torrent: fetching metadata (connecting)…</string>
+    <string name="log_torrent_no_peers">torrent: no metadata — no peers reachable; try Wi-Fi or another network</string>
+    <string name="log_torrent_dht_ready">torrent: DHT ready, %1$d nodes</string>
+    <string name="log_torrent_no_video">torrent: no video file matching this episode</string>
+    <string name="log_torrent_streaming">torrent: streaming the subtitle track — only the pieces it covers are fetched</string>
     <string name="log_torrent_budget_hit">Stopped at the %1$d MB limit before a subtitle track was found</string>
     <string name="api_hint_subsource">Strong Turkish coverage · free key from your profile</string>
 </resources>
